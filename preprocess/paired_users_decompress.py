@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 
 zstd_file_lst = []
-directory = Path("./paired_users")
+directory = Path("./data/raw/paired_users")
 
 # change file name from zst to zstd
 rename = True
@@ -24,7 +24,7 @@ for d in sorted(directory.iterdir()):
                 zstd_file_lst.append(f)
 
 # decompress and save files
-path_save_dir = Path("./paired_users_decompressed")
+path_save_dir = Path("./data/decompressed/paired_users_decompressed")
 for f in zstd_file_lst:
     path_tmp = path_save_dir / Path(*f.parts[1:2])
     path_tmp.mkdir(parents=True, exist_ok=True)
