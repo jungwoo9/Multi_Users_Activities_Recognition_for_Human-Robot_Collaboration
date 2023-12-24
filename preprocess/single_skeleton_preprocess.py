@@ -66,7 +66,7 @@ def concatenate_two_skeleton(skeleton_dict):
     """
     Concatenates two skeletons from different participants.
     """
-    paired_skeleton = {}
+    grouped_skeleton = {}
     for k in skeleton_dict.keys():
         print(k)
         ptcp_1 = k.split("_")[0] # participant
@@ -84,9 +84,9 @@ def concatenate_two_skeleton(skeleton_dict):
                 window_size = min(np.array(skeleton_dict[k]).shape[0], np.array(skeleton_dict[k_]).shape[0])
                 new_skeleton = np.concatenate((np.array(skeleton_dict[k])[:window_size], np.array(skeleton_dict[k_])[:window_size]), axis=3)
 
-                paired_skeleton[new_name] = new_skeleton
+                grouped_skeleton[new_name] = new_skeleton
 
-    return paired_skeleton
+    return grouped_skeleton
 
 def concatenate_two_skeleton_length_6(skeleton_dict):
     """
@@ -94,7 +94,7 @@ def concatenate_two_skeleton_length_6(skeleton_dict):
     If the number of window is less than 6, duplicate to fit the size.
     If the number of window is greater than 6, 0-5 skeletons are used.
     """
-    paired_skeleton = {}
+    grouped_skeleton = {}
     for k in skeleton_dict.keys():
         print(k)
         ptcp_1 = k.split("_")[0] # participant
@@ -118,9 +118,9 @@ def concatenate_two_skeleton_length_6(skeleton_dict):
                 
                 new_skeleton = np.concatenate((np.array(k_skeleton)[:6], np.array(k__skeleton)[:6]), axis=3)
                 
-                paired_skeleton[new_name] = new_skeleton
+                grouped_skeleton[new_name] = new_skeleton
 
-    return paired_skeleton
+    return grouped_skeleton
 
 if __name__ == "__main__":
     # extract skeleton from database
@@ -149,11 +149,11 @@ if __name__ == "__main__":
     window_skeleton_dict = generate_window(norm_skeleton_dict)
 
     # concatenate data
-    # paired_window_skeleton_dict = concatenate_two_skeleton(window_skeleton_dict)
+    # grouped_window_skeleton_dict = concatenate_two_skeleton(window_skeleton_dict)
 
     # concatenate data with fixed size (=6)
-    paired_window_skeleton_dict = concatenate_two_skeleton_length_6(window_skeleton_dict)
+    grouped_window_skeleton_dict = concatenate_two_skeleton_length_6(window_skeleton_dict)
 
-    # save paired skeleton
-    path_to_save = './data/skeleton/final/paired_window_length_fixed_single_skeleton_dict.pkl'
-    save_single_skeleton_dict(paired_window_skeleton_dict, path_to_save)
+    # save grouped skeleton
+    path_to_save = './data/skeleton/final/grouped_window_length_fixed_single_skeleton_dict.pkl'
+    save_single_skeleton_dict(grouped_window_skeleton_dict, path_to_save)
