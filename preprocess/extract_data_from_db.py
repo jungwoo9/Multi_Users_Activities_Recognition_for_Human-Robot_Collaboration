@@ -53,31 +53,8 @@ def extract_data_from_db(path_db):
             msg = serialization.deserialize_message(row[3], message_type)
 
             data.append(msg.data)
-    
-    # process pair skeleton
-    elif 'pair' in str(path_db):
-        for row in db_lst:
-            id.append(row[0])
-            topic_id.append(row[1])
-            time_stamp.append(row[2])
-            marker_array = serialization.deserialize_message(row[3], message_type)
-            
-            # skip when the marker_array is empty
-            if marker_array.markers == []:
-                continue
-            
-            # get 11 joints
-            skeleton = [marker_array.markers[i].pose.position for i in Index]
-            
-            pair_id = marker_array.markers[0].id
-            
-            # skip when the marker does not include all joints we needed
-            if len(skeleton) != 11:
-                continue
 
-            data.append(skeleton + [pair_id])
-
-    # process single skeleton
+    # process skeleton
     else:
         for row in db_lst:
             id.append(row[0])

@@ -7,20 +7,7 @@ from normalize_skeleton import normalize_process
 
 from collections import Counter
 
-def validate_participant_ids(path_directory):
-    """
-    Validates the correctness of research participant IDs (object IDs) in pair data markers (skeleton directories).
-    IDs must be either 100 or 200; otherwise, it indicates a reassignment error.
-    """
-    for directory in sorted(path_directory.iterdir()):
-        if directory.is_dir():
-            if str(directory).split("_")[-1] == "skeleton":
-                for db in directory.iterdir():
-                    if db.is_file():
-                        _, _, _, data = extract_data_from_db(db)
-                        for i in data:
-                            if i[-1] not in [100, 200]:
-                                print("Include new id(reassigend):", i[-1])
+import argparse
 
 def extract_paired_skeleton_label(path_directory):
     skeleton_dict = {}
@@ -65,78 +52,66 @@ def load_dict(path_to_load):
 
     return dict_
 
-def remove_consecutive_duplicates(skeleton_dict, label_dict):
-    """
-    Removes consecutive duplicates.
-    For example, if the participants skeleton is like this
-        100 200 200 100 100 100 100 200
-        then
-        100 200 100 200
-    """
+def identify_ptcp(skeleton_dict):
+    ptcp_dict = {}
+    for k in skeleton_dict.keys():
+        new_ptcps = []
+        for sk in skeleton_dict[k]:
+            if sk[0].x > 0:
+                new_ptcps.append(200)
+            elif sk[0].x < 0:
+                new_ptcps.append(100)
+        ptcp_dict[k] = new_ptcps
 
+    return ptcp_dict
+
+def concatenate_two_skeleton(skeleton_dict, label_dict, ptcp_dict):
     new_skeleton_dict = {}
     new_label_dict = {}
 
     for k_sk, k_lb in zip(skeleton_dict.keys(), label_dict.keys()):
-        skeleton = skeleton_dict[k_sk]
-        label = label_dict[k_lb]
+        skeleton, label, ptcp = skeleton_dict[k_sk], label_dict[k_lb], ptcp_dict[k_sk]
 
-        temp_id = -100 # store the temporal id
+        first_ptcp = ptcp[0]
+        tmp_ptcp = ptcp[0]
+
+        buf_100_skeleton = []
+        buf_100_label = []
+        buf_200_skeleton = []
+        buf_200_label = []
+
+        length = min(len(skeleton), len(label))
+
         new_skeleton = []
         new_label = []
 
-        length = len(skeleton) if len(skeleton) <= len(label) else len(label)
         for i in range(length):
-            id = skeleton[i][-1] # participant id was saved and appended at the end of list
-            s = skeleton[i][:-1] # get only skeleton part without id
-            l = label[i]
+            if ptcp[i] == first_ptcp and i != 0 and tmp_ptcp != ptcp[i]:
+                for sk1 in range(len(buf_100_skeleton)):
+                    for sk2 in range(len(buf_200_skeleton)):
+                        if buf_100_label[sk1] == buf_200_label[sk2]:
+                            new_skeleton.append(np.concatenate((np.array(buf_100_skeleton[sk1]), np.array(buf_200_skeleton[sk2])), axis=1))
+                            new_label.append(buf_100_label[sk1])
 
-            # check if the current ID is different from the previous one
-            if id != temp_id:
-                temp_id = id
-                new_skeleton.append(s)
-                new_label.append(l)
-            
-            # update the last element in the list (overwrite if ID is the same)
-            new_skeleton[-1] = s
-            new_label[-1] = l
-        
+                buf_100_skeleton = []
+                buf_100_label = []
+                buf_200_skeleton = []
+                buf_200_label = []
+
+            if ptcp[i] == 100:
+                buf_100_skeleton.append(skeleton[i])
+                buf_100_label.append(label[i])
+
+            elif ptcp[i] == 200:
+                buf_200_skeleton.append(skeleton[i])
+                buf_200_label.append(label[i])
+
+            tmp_ptcp = ptcp[i]
+
         new_skeleton_dict[k_sk] = new_skeleton
         new_label_dict[k_lb] = new_label
-    
+
     return new_skeleton_dict, new_label_dict
-
-def concatenate_two_skeleton(skeleton_dict, label_dict):
-    concat_skeleton_dict = {}
-    concat_label_dict = {}
-
-    for k_sk, k_lb in zip(skeleton_dict.keys(), label_dict.keys()):
-        skeleton, label = skeleton_dict[k_sk], label_dict[k_lb]
-
-        # remove the last element
-        if len(skeleton) % 2 != 0:
-            skeleton = skeleton[:-1]
-            label = label[:-1]
-        
-        # concatenate pair participants
-        concat_skeleton_lst = []
-        concat_label_lst = []
-
-        i = 0
-        for _ in range(int(len(skeleton)/2)):
-            # if two pair participants have different label, delete it
-            if label[i] != label[i+1]:
-                i += 2
-                continue
-            concat_skeleton = np.concatenate((skeleton[i], skeleton[i+1]), axis=1)
-            concat_skeleton_lst.append(concat_skeleton.tolist())
-            concat_label_lst.append(label[i])
-            i += 2
-
-        concat_skeleton_dict[k_sk] = concat_skeleton_lst
-        concat_label_dict[k_lb] = concat_label_lst
-
-    return concat_skeleton_dict, concat_label_dict
 
 def remove_near_new_activity(skeleton_dict, label_dict):
 
@@ -154,9 +129,9 @@ def remove_near_new_activity(skeleton_dict, label_dict):
             if tmp_label != label[i]:
                 tmp_label = label[i]
                 
-                new_skeleton.extend(skeleton[start_cut:i-6])
-                new_label.extend(label[start_cut:i-6])
-                start_cut = i + 6
+                new_skeleton.extend(skeleton[start_cut:i-args.new_activity_length])
+                new_label.extend(label[start_cut:i-args.new_activity_length])
+                start_cut = i + args.new_activity_length
         
         new_skeleton.extend(skeleton[start_cut:])
         new_label.extend(label[start_cut:])
@@ -175,19 +150,21 @@ def generate_window(skeleton_dict, label_dict):
         
         skeleton_window = []
         label_window = []
-        for i in range(len(skeleton)-130+1):
-            skeleton_window.append(skeleton[i:i+130])
-            label_window.append(label[i+129])
+        for i in range(len(skeleton)-args.window_size+1):
+            if Counter(label[i:i+args.window_size])[label[i+args.window_size-1]] < 70:
+                continue
+
+            skeleton_window.append(skeleton[i:i+args.window_size])
+            label_window.append(label[i+args.window_size-1])
         
         skeleton_window_dict[k_sk] = skeleton_window
         label_window_dict[k_lb] = label_window
     
     return skeleton_window_dict, label_window_dict
 
-if __name__ == "__main__":
+def main():
     # check participants id correctness
     # path_directory = Path("./data/decompressed/paired_users_decompressed")
-    # validate_participant_ids(path_directory)
 
     # get paired skeleton
     # skeleton_dict, label_dict = extract_paired_skeleton_label(path_directory)
@@ -204,8 +181,8 @@ if __name__ == "__main__":
     skeleton_dict = load_dict(path_to_load_skeleton)
     label_dict = load_dict(path_to_load_label)
 
-    # remove consecutive duplicates
-    skeleton_dict, label_dict = remove_consecutive_duplicates(skeleton_dict, label_dict)
+    # identify participants as 100 and 200
+    ptcp_dict = identify_ptcp(skeleton_dict)
 
     # normalize skeleton
     norm_skeleton_dict = normalize_process(skeleton_dict)
@@ -217,13 +194,24 @@ if __name__ == "__main__":
     save_dict(label_dict, path_to_save_label)
 
     # concatenate two participants and then remove near new activity
-    concat_skeleton_dict, concat_label_dict = remove_near_new_activity(*concatenate_two_skeleton(norm_skeleton_dict, label_dict))
+    concat_skeleton_dict, concat_label_dict = remove_near_new_activity(*concatenate_two_skeleton(norm_skeleton_dict, label_dict, ptcp_dict))
     
     # generate window
     skeleton_window_dict, label_window_dict = generate_window(concat_skeleton_dict, concat_label_dict)
 
     # save paired skeleton and label dictionary
-    path_to_save_skeleton = './data/skeleton/final/paired_window_skeleton_dict.pkl'
-    path_to_save_label = './data/skeleton/final/paired_window_label_dict.pkl'
+    path_to_save_skeleton = './data/skeleton/final/paired/paired_window_skeleton_dict.pkl'
+    path_to_save_label = './data/skeleton/final/paired/paired_window_label_dict.pkl'
     save_dict(skeleton_window_dict, path_to_save_skeleton)
     save_dict(label_window_dict, path_to_save_label)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument("step", default='generate_window', choices=['all', 'normalise', 'generate_window'], help="choose what step to start with | step is extract - normalise - generate_window(including concatenation)")
+    parser.add_argument("window_size", default=130, type=int, help="decide window size")
+    parser.add_argument("new_activity_length", default=52, type=int, help="decide new activity length to delete those lengh time")
+
+    args = parser.parse_args()
+
+    main()

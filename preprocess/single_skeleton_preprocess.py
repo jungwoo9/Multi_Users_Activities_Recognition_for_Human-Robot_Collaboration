@@ -5,6 +5,8 @@ import pickle
 from extract_data_from_db import extract_data_from_db
 from normalize_skeleton import normalize_process
 
+import argparse
+
 def extract_single_skeleton_from_directory(path_directory):
     """
     Extracts skeleton data from a directory containing databases.
@@ -48,8 +50,8 @@ def generate_window(skeleton_dict):
     """
     Generates windows of skeleton data.
     """
-    total_samples_per_window = 130
-    new_activity_samples_length = 26
+    total_samples_per_window = args.window_size
+    new_activity_samples_length = args.new_activity_length
 
     window_skeleton_dict = {}
     for k, v in skeleton_dict.items():
@@ -67,11 +69,23 @@ def concatenate_two_skeleton(skeleton_dict):
     Concatenates two skeletons from different participants.
     """
     grouped_skeleton = {}
+
+    ptcp = None
+
     for k in skeleton_dict.keys():
         print(k)
         ptcp_1 = k.split("_")[0] # participant
         act_1 = k.split("_")[1] # activity
         r_1 = int(k.split("_")[3][1:]) # repetition
+
+        if ptcp is None:
+            ptcp = ptcp_1
+
+        elif ptcp != ptcp_1:
+            path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp}.pkl'
+            save_single_skeleton_dict(grouped_skeleton, path_to_save)
+            ptcp = ptcp_1
+            grouped_skeleton = {}
 
         for k_ in skeleton_dict.keys():
             if ptcp_1 not in k_:
@@ -79,81 +93,65 @@ def concatenate_two_skeleton(skeleton_dict):
                 act_2 = k_.split("_")[1]
                 r_2 = int(k_.split("_")[3][1:])
                 new_name = "_".join([ptcp_1, ptcp_2, act_1, act_2, str(r_1 + r_2), "skeleton"])
-
-                # use minimum window size
-                window_size = min(np.array(skeleton_dict[k]).shape[0], np.array(skeleton_dict[k_]).shape[0])
-                new_skeleton = np.concatenate((np.array(skeleton_dict[k])[:window_size], np.array(skeleton_dict[k_])[:window_size]), axis=3)
-
-                grouped_skeleton[new_name] = new_skeleton
-
-    return grouped_skeleton
-
-def concatenate_two_skeleton_length_6(skeleton_dict):
-    """
-    Concatenates two skeletons with a fixed length of 6 windows.
-    If the number of window is less than 6, duplicate to fit the size.
-    If the number of window is greater than 6, 0-5 skeletons are used.
-    """
-    grouped_skeleton = {}
-    for k in skeleton_dict.keys():
-        print(k)
-        ptcp_1 = k.split("_")[0] # participant
-        act_1 = k.split("_")[1] # activity
-        r_1 = int(k.split("_")[3][1:]) # repetition
-
-        for k_ in skeleton_dict.keys():
-            if ptcp_1 not in k_:
-                ptcp_2 = k_.split("_")[0]
-                act_2 = k_.split("_")[1]
-                r_2 = int(k_.split("_")[3][1:])
-                new_name = "_".join([ptcp_1, ptcp_2, act_1, act_2, str(r_1 + r_2), "skeleton"])
-
-                # use minimum window size
-                k_skeleton = skeleton_dict[k]
-                if len(k_skeleton) < 6:
-                    k_skeleton = k_skeleton * (6 // len(k_skeleton) + 1)
-                k__skeleton = skeleton_dict[k_]
-                if len(k__skeleton) < 6:
-                    k__skeleton = k__skeleton * (6 // len(k__skeleton) + 1)
                 
-                new_skeleton = np.concatenate((np.array(k_skeleton)[:6], np.array(k__skeleton)[:6]), axis=3)
+                new_skeleton = []
+                for sk1 in skeleton_dict[k]:
+                    for sk2 in skeleton_dict[k_]:
+                        new_skeleton.append(np.concatenate((np.array(sk1),np.array(sk2)), axis=2))
                 
                 grouped_skeleton[new_name] = new_skeleton
 
+    path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp_1}.pkl'
+    save_single_skeleton_dict(grouped_skeleton, path_to_save)
+        
     return grouped_skeleton
 
-if __name__ == "__main__":
-    # extract skeleton from database
-    # skeleton_dict = extract_single_skeleton_from_directory(Path("./data/decompressed/single_users_decompressed"))
+def main():
+    if args.step == 'all':
+        # extract skeleton from database
+        skeleton_dict = extract_single_skeleton_from_directory(Path("./data/decompressed/single_users_decompressed"))
 
-    # save skeleton dictionary file as pickle
-    # path_to_save = './data/skeleton/raw/single_skeleton_dict.pkl'
-    # save_single_skeleton_dict(skeleton_dict, path_to_save)
+        # save skeleton dictionary file as pickle
+        path_to_save = './data/skeleton/raw/single_skeleton_dict.pkl'
+        save_single_skeleton_dict(skeleton_dict, path_to_save)
 
-    # load skeleton dictionary file from pickle
-    # path_to_load = './data/skeleton/raw/single_skeleton_dict.pkl'
-    # skeleton_dict = load_single_skeleton_dict(path_to_load)
+        # normalize skeleton
+        norm_skeleton_dict = normalize_process(skeleton_dict)
 
-    # normalize skeleton
-    # norm_skeleton_dict = normalize_process(skeleton_dict)
+        # save skeleton dictionary file as pickle
+        path_to_save = './data/skeleton/normalized/normalized_single_skeleton_dict.pkl'
+        save_single_skeleton_dict(norm_skeleton_dict, path_to_save)
 
-    # save skeleton dictionary file as pickle
-    # path_to_save = './data/skeleton/normalized/normalized_single_skeleton_dict.pkl'
-    # save_single_skeleton_dict(norm_skeleton_dict, path_to_save)
+    elif args.step == 'normalise':
+        # load skeleton dictionary file from pickle
+        path_to_load = './data/skeleton/raw/single_skeleton_dict.pkl'
+        skeleton_dict = load_single_skeleton_dict(path_to_load)
 
-    # load skeleton dictionary file from pickle
-    path_to_load = './data/skeleton/normalized/normalized_single_skeleton_dict.pkl'
-    norm_skeleton_dict = load_single_skeleton_dict(path_to_load)
+        # normalize skeleton
+        norm_skeleton_dict = normalize_process(skeleton_dict)
+
+        # save skeleton dictionary file as pickle
+        path_to_save = './data/skeleton/normalized/normalized_single_skeleton_dict.pkl'
+        save_single_skeleton_dict(norm_skeleton_dict, path_to_save)
+
+    elif args.step == 'generate_window':
+        # load skeleton dictionary file from pickle
+        path_to_load = './data/skeleton/normalized/normalized_single_skeleton_dict.pkl'
+        norm_skeleton_dict = load_single_skeleton_dict(path_to_load)
     
     # generate window in each case
     window_skeleton_dict = generate_window(norm_skeleton_dict)
 
     # concatenate data
-    # grouped_window_skeleton_dict = concatenate_two_skeleton(window_skeleton_dict)
+    grouped_window_skeleton_dict = concatenate_two_skeleton(window_skeleton_dict)
 
-    # concatenate data with fixed size (=6)
-    grouped_window_skeleton_dict = concatenate_two_skeleton_length_6(window_skeleton_dict)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument("step", default='generate_window', choices=['all', 'normalise', 'generate_window'], help="choose what step to start with | step is extract - normalise - generate_window(including concatenation)")
+    parser.add_argument("window_size", default=130, type=int, help="decide window size")
+    parser.add_argument("new_activity_length", default=26, type=int, help="decide new activity length to delete those lengh time")
 
-    # save grouped skeleton
-    path_to_save = './data/skeleton/final/grouped_window_length_fixed_single_skeleton_dict.pkl'
-    save_single_skeleton_dict(grouped_window_skeleton_dict, path_to_save)
+    args = parser.parse_args()
+
+    main()
