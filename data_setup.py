@@ -57,7 +57,7 @@ def generate_grouped_data(skeleton_dict, data_):
   labels = []
   for k in data_:
     label = map_label(int(k.split("_")[2][1:]), int(k.split("_")[3][1:]))
-    # print(1, skeleton_dict[k].shape) 3
+
     for _ in range(skeleton_dict[k].shape[0]):
       labels.append(label)
     data.append(skeleton_dict[k])
@@ -75,9 +75,14 @@ def update_all_dict():
     
     return base_dict
   
-def get_grouped_dataloader(ptcp_id='s01', train=True):
-    # grouped_window_skeleton_dict = load_dict("/content/drive/MyDrive/3rd_year_project/data/grouped_single_skeleton_dict_all_cases.pkl")
-    grouped_window_skeleton_dict = update_all_dict()
+def get_grouped_dataloader(ptcp_id='s01', train=True, batch_size=256, all_data=True):
+    # in case of csf3
+    if all_data:
+        grouped_window_skeleton_dict = load_dict("/content/drive/MyDrive/3rd_year_project/data/grouped_single_skeleton_dict_all_cases.pkl")
+
+    # in case of colab or limit computation
+    else:
+        grouped_window_skeleton_dict = update_all_dict()
 
     if ptcp_id == "all":
         data, labels = generate_grouped_data(grouped_window_skeleton_dict, grouped_window_skeleton_dict.keys())
@@ -86,13 +91,11 @@ def get_grouped_dataloader(ptcp_id='s01', train=True):
         
         data, labels = generate_grouped_data(grouped_window_skeleton_dict, train_ if train else test_)
     
-    # data = np.reshape(np.array(data), (np.array(data).shape[0] * np.array(data).shape[1], 130, 3, 20))
-    print(data.shape)
     new_data = []
     for d, l in zip(data, labels):
       new_data.append([d, l])
     
-    dataloader = torch.utils.data.DataLoader(new_data, shuffle=True, batch_size=256)
+    dataloader = torch.utils.data.DataLoader(new_data, shuffle=True, batch_size=batch_size)
     return dataloader
 
 ## paired ##
@@ -133,7 +136,7 @@ def generate_paired_data(path_skeleton, path_label):
 
     return np.array(train_skeleton), np.array(train_label), np.array(train_ptcp_ids)
     
-def get_paired_dataloader(ptcp_id='s01', train=True):
+def get_paired_dataloader(ptcp_id='s01', train=True, batch_size=256):
     path_paired_skeleton = "/content/drive/MyDrive/3rd_year_project/data/paired_window_skeleton_dict.pkl"
     path_paired_label = "/content/drive/MyDrive/3rd_year_project/data/paired_window_label_dict.pkl"
 
@@ -141,6 +144,6 @@ def get_paired_dataloader(ptcp_id='s01', train=True):
 
     dataset = PairedSkeletonDataset(skeleton, label, ptcp_ids, ptcp_id=ptcp_id, train=train)
 
-    dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     return dataloader

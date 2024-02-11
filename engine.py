@@ -7,6 +7,23 @@ import data_setup, models
 import numpy as np
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
+class EarlyStopper:
+    def __init__(self, patience=2, min_delta=0.01):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_validation_loss = float('inf')
+
+    def early_stop(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
+
 def train_lstm(model, trainloader, num_epochs=10, lr=0.00001, device='cpu'):
     model.train()
     
@@ -164,7 +181,7 @@ def train_test_lstm(task='grouped-grouped', device='cpu'):
         
     return train_rst_dicts, test_rst_dicts, y_true_dicts, y_pred_dicts
 
-def train_vae_stgcn(model, trainloader, num_epochs=1, lr=0.0001, device='cpu'):
+def train_vae_stgcn(model, trainloader, num_epochs=4, lr=0.0001, device='cpu'):
     model.train()
     
     # Loss and optimizer
@@ -179,10 +196,10 @@ def train_vae_stgcn(model, trainloader, num_epochs=1, lr=0.0001, device='cpu'):
             x = x.to(device)
             
             # Forward pass
-            recon_x, mean, log_var = model(x)
+            x_mean, x_var, z, mean, log_var = model(x)
         
             # Compute loss
-            loss = models.vae_loss(x.to(torch.float32), recon_x, mean, log_var)
+            loss = models.vae_loss(x.to(torch.float32), x_mean, x_var, z, mean, log_var, device)
         
             # Backward and optimize
             optimizer.zero_grad()
@@ -198,16 +215,17 @@ def train_vae_stgcn(model, trainloader, num_epochs=1, lr=0.0001, device='cpu'):
       
     return train_rst_dict
     
-def train_predictor(model, trainloader, num_epochs=5, lr=0.0001, device='cpu'):
-    model.train()
-    
+def train_predictor(model, trainloader, testloader, num_epochs=10, lr=0.0001, device='cpu'):
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     
     train_rst_dict = {'loss':[], 'acc':[]}
     
+    early_stopper = EarlyStopper(patience=2, min_delta=0.01)
+    
     for epoch in range(num_epochs):
+        model.train()
         train_loss = 0
         train_acc = 0
         for x, y in trainloader:
@@ -236,8 +254,16 @@ def train_predictor(model, trainloader, num_epochs=5, lr=0.0001, device='cpu'):
         train_rst_dict['loss'].append(train_loss)
         train_rst_dict['acc'].append(train_acc)
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}, Acc: {train_acc:.4f}')
-      
-    return train_rst_dict
+        
+        # test
+        test_rst_dict, y_true, y_pred = test_predictor(model, testloader, device)
+        print(f"test loss: {test_rst_dict['loss'][0]:.2f} | test acc: {test_rst_dict['acc'][0]:.2f}")
+        
+        if early_stopper.early_stop(test_rst_dict['loss'][0]):          
+            print('early stopped')
+            break
+        
+    return train_rst_dict, test_rst_dict, y_true, y_pred
     
 def test_predictor(model, testloader, device):
     model.eval()
@@ -287,8 +313,8 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         
         for ptcp_id in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
             print(f"grouped-grouped experiment with {ptcp_id}")
-            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id)
-            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, train=False)
+            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=50)
+            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, train=False
 
             vae_stgcn = models.get_vae_stgcn(device=device)
 
@@ -296,13 +322,8 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
             
             predictor = models.get_predictor(vae_stgcn=vae_stgcn, device=device)
             
-            predictor_train_rst_dict = train_predictor(model=predictor, trainloader=grouped_trainloader, device=device)
-            
-            test_rst_dict, y_true, y_pred = test_predictor(model=predictor, testloader=grouped_testloader, device=device)
-            
-            print(f"test loss: {test_rst_dict['loss'][0]:.2f} | test acc: {test_rst_dict['acc'][0]:.2f}")
-            print()
-            
+            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_trainloader, testloader=grouped_testloader, device=device)
+
             vae_stgcn_train_rst_dicts[ptcp_id] = vae_stgcn_train_rst_dict
             predictor_train_rst_dicts[ptcp_id] = predictor_train_rst_dict
             test_rst_dicts[ptcp_id] = test_rst_dict
@@ -318,7 +339,7 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         
         for ptcp_id in ['s1', 's2', 's3']:
             print(f"paired-paired experiment with {ptcp_id}")
-            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id)
+            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=50)
             paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, train=False)
 
             vae_stgcn = models.get_vae_stgcn(device=device)
@@ -327,12 +348,7 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
             
             predictor = models.get_predictor(vae_stgcn=vae_stgcn, device=device)
             
-            predictor_train_rst_dict = train_predictor(model=predictor, trainloader=paired_trainloader, device=device)
-            
-            test_rst_dict, y_true, y_pred = test_predictor(model=predictor, testloader=paired_testloader, device=device)
-            
-            print(f"test loss: {test_rst_dict['loss'][0]:.2f} | test acc: {test_rst_dict['acc'][0]:.2f}")
-            print()
+            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=paired_trainloader, testloader=paired_testloader, device=device)
             
             vae_stgcn_train_rst_dicts[ptcp_id] = vae_stgcn_train_rst_dict
             predictor_train_rst_dicts[ptcp_id] = predictor_train_rst_dict
@@ -349,7 +365,7 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         y_true_dicts = {}
         y_pred_dicts = {}
         
-        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all')
+        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all', batch_size=50)
         paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all')
         
         vae_stgcn = models.get_vae_stgcn(device=device)
@@ -358,12 +374,7 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         
         predictor = models.get_predictor(vae_stgcn=vae_stgcn, device=device)
         
-        predictor_train_rst_dict = train_predictor(model=predictor, trainloader=grouped_trainloader, device=device)
-        
-        test_rst_dict, y_true, y_pred = test_predictor(model=predictor, testloader=paired_testloader, device=device)
-        
-        print(f"test loss: {test_rst_dict['loss'][0]:.2f} | test acc: {test_rst_dict['acc'][0]:.2f}")
-        print()
+        predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_trainloader, testloader=paired_testloader, device=device)
         
         vae_stgcn_train_rst_dicts['all'] = vae_stgcn_train_rst_dict
         predictor_train_rst_dicts['all'] = predictor_train_rst_dict
@@ -371,12 +382,10 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         y_true_dicts['all'] = y_true
         y_pred_dicts['all'] = y_pred
         
-        print(f"test loss: {test_rst_dict['loss']} | test acc: {test_rst_dict['acc']}")
-        print()
-        
     return vae_stgcn_train_rst_dict, predictor_train_rst_dict, test_rst_dicts, y_true_dicts, y_pred_dicts
 
 def plot_cfm(y_true, y_pred):
     cfm = confusion_matrix(y_true, y_pred)
+    cfmn = cfm.astype('float') / cfm.sum(axis=1)[:, np.newaxis]
     
-    ConfusionMatrixDisplay(np.round(cfm / cfm.astype(np.float).sum(axis=1), 4)).plot()
+    ConfusionMatrixDisplay(confusion_matrix=cfmn, display_labels=[0, 1, 2, 3, 4, 5, 6, 7, 8]).plot()
