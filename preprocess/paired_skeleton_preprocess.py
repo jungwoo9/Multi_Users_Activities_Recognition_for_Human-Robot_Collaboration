@@ -19,7 +19,8 @@ def extract_paired_skeleton_label(path_directory):
                 if db.is_file():
                     if 'label' in str(db):
                         _, _, _, label = extract_data_from_db(db)
-                        label_dict[db.parts[-2]] = label
+                        
+                        label_dict["_".join(db.parts[-2].split("_")[:-2]+[db.parts[-2].split("_")[-2][-1], db.parts[-2].split("_")[-1]])] = label
                         print(db, len(label))
                     
                     elif 'skeleton' in str(db):
@@ -29,7 +30,7 @@ def extract_paired_skeleton_label(path_directory):
                         if skeleton == []:
                             continue
                         
-                        skeleton_dict[db.parts[-2]] = skeleton
+                        skeleton_dict["_".join(db.parts[-2].split("_")[:-2]+[db.parts[-2].split("_")[-2][-1], db.parts[-2].split("_")[-1]])] = skeleton
 
                         skeleton = np.array(skeleton)
                         print(db, skeleton.shape)
@@ -198,6 +199,21 @@ def main():
     
     # generate window
     skeleton_window_dict, label_window_dict = generate_window(concat_skeleton_dict, concat_label_dict)
+
+    s1label = []
+    s2label = []
+    s3label = []
+    for k, l in label_window_dict.items():
+        if 's1' not in k:
+            s1label.extend(l)
+        if 's2' not in k:
+            s2label.extend(l)
+        if 's3' not in k:
+            s3label.extend(l)
+        print(k, Counter(l))
+    print('s1', Counter(s1label), len(s1label))
+    print('s2', Counter(s2label), len(s2label))
+    print('s3', Counter(s3label), len(s3label))
 
     # save paired skeleton and label dictionary
     path_to_save_skeleton = './data/skeleton/final/paired/paired_window_skeleton_dict.pkl'
