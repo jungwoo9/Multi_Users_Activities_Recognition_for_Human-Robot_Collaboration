@@ -103,7 +103,7 @@ def test_lstm(model, testloader, device='cpu'):
     
     return test_rst_dict, y_true, y_pred
     
-def train_test_lstm(task='grouped-grouped', device='cpu'):
+def train_test_lstm(task='grouped-grouped', device='cpu', csf3=True):
     if task=="grouped-grouped":
         train_rst_dicts = {}
         test_rst_dicts = {}
@@ -112,8 +112,8 @@ def train_test_lstm(task='grouped-grouped', device='cpu'):
         
         for ptcp_id in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
             print(f"grouped-grouped experiment with {ptcp_id}")
-            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id)
-            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, train=False)
+            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, csf3=True)
+            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, train=False, csf3=True)
 
             lstm = models.get_lstm(device=device)
 
@@ -137,8 +137,8 @@ def train_test_lstm(task='grouped-grouped', device='cpu'):
         
         for ptcp_id in ['s1', 's2', 's3']:
             print(f"paired-paired experiment with {ptcp_id}")
-            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id)
-            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, train=False)
+            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, csf3=True)
+            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, train=False, csf3=True)
 
             lstm = models.get_lstm(device=device)
 
@@ -162,8 +162,8 @@ def train_test_lstm(task='grouped-grouped', device='cpu'):
         y_true_dicts = {}
         y_pred_dicts = {}
         
-        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all')
-        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all')
+        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all', csf3=True)
+        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', csf3=True)
         
         lstm = models.get_lstm(device=device)
 
@@ -303,7 +303,7 @@ def test_predictor(model, testloader, device):
     
     return test_rst_dict, y_true, y_pred
 
-def train_test_predictor(task='grouped-grouped', device='cpu'):
+def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
     if task=="grouped-grouped":
         vae_stgcn_train_rst_dicts = {}
         predictor_train_rst_dicts = {}
@@ -313,8 +313,8 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         
         for ptcp_id in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
             print(f"grouped-grouped experiment with {ptcp_id}")
-            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=50)
-            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, train=False
+            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=50, csf3=True)
+            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, train=False, csf3=True)
 
             vae_stgcn = models.get_vae_stgcn(device=device)
 
@@ -339,8 +339,8 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         
         for ptcp_id in ['s1', 's2', 's3']:
             print(f"paired-paired experiment with {ptcp_id}")
-            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=50)
-            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, train=False)
+            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=50, csf3=True)
+            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, train=False, csf3=True)
 
             vae_stgcn = models.get_vae_stgcn(device=device)
 
@@ -365,8 +365,8 @@ def train_test_predictor(task='grouped-grouped', device='cpu'):
         y_true_dicts = {}
         y_pred_dicts = {}
         
-        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all', batch_size=50)
-        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all')
+        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all', batch_size=50, csf3=True)
+        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', csf3=True)
         
         vae_stgcn = models.get_vae_stgcn(device=device)
 

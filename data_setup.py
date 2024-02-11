@@ -64,25 +64,26 @@ def generate_grouped_data(skeleton_dict, data_):
     
   return np.concatenate(data), labels
   
-def update_all_dict():
+def update_all_dict(csf3):
     base_dict = {}
-    for i in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']: # 
-        tmp_dict = load_dict(f"/content/drive/MyDrive/3rd_year_project/data/grouped_single_skeleton_dict_{i}.pkl")
+    for i in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
+        # in case of csf3
+        if csf3:
+            tmp_dict = load_dict(f"./project/data/grouped/grouped_single_skeleton_dict_{i}.pkl")
+            base_dict.update(tmp_dict)
         
-        sample_dict = {k:tmp_dict[k] for k in random.sample(list(tmp_dict), 350)}
-        
-        base_dict.update(sample_dict)
+        # in case of colab
+        else:
+            tmp_dict = load_dict(f"/content/drive/MyDrive/3rd_year_project/data/grouped_single_skeleton_dict_{i}.pkl")
+            
+            # need to use partial data due to the limitation of memory
+            sample_dict = {k:tmp_dict[k] for k in random.sample(list(tmp_dict), 350)}
+            base_dict.update(sample_dict)
     
     return base_dict
   
-def get_grouped_dataloader(ptcp_id='s01', train=True, batch_size=256, all_data=True):
-    # in case of csf3
-    if all_data:
-        grouped_window_skeleton_dict = load_dict("/content/drive/MyDrive/3rd_year_project/data/grouped_single_skeleton_dict_all_cases.pkl")
-
-    # in case of colab or limit computation
-    else:
-        grouped_window_skeleton_dict = update_all_dict()
+def get_grouped_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True):
+    grouped_window_skeleton_dict = update_all_dict(csf3)
 
     if ptcp_id == "all":
         data, labels = generate_grouped_data(grouped_window_skeleton_dict, grouped_window_skeleton_dict.keys())
@@ -136,9 +137,14 @@ def generate_paired_data(path_skeleton, path_label):
 
     return np.array(train_skeleton), np.array(train_label), np.array(train_ptcp_ids)
     
-def get_paired_dataloader(ptcp_id='s01', train=True, batch_size=256):
-    path_paired_skeleton = "/content/drive/MyDrive/3rd_year_project/data/paired_window_skeleton_dict.pkl"
-    path_paired_label = "/content/drive/MyDrive/3rd_year_project/data/paired_window_label_dict.pkl"
+def get_paired_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True):
+    if csf3:
+        path_paired_skeleton = "./project/data/paired/paired_window_skeleton_dict.pkl"
+        path_paired_label = "./project/data/paired/paired_window_label_dict.pkl"
+
+    else:
+        path_paired_skeleton = "/content/drive/MyDrive/3rd_year_project/data/paired_window_skeleton_dict.pkl"
+        path_paired_label = "/content/drive/MyDrive/3rd_year_project/data/paired_window_label_dict.pkl"
 
     skeleton, label, ptcp_ids = generate_paired_data(path_paired_skeleton, path_paired_label)
 
