@@ -314,7 +314,7 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         for ptcp_id in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
             print(f"grouped-grouped experiment with {ptcp_id}")
             grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=50, csf3=csf3)
-            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, train=False, csf3=csf3)
+            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=50, train=False, csf3=csf3)
 
             vae_stgcn = models.get_vae_stgcn(device=device)
 
@@ -340,7 +340,7 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         for ptcp_id in ['s1', 's2', 's3']:
             print(f"paired-paired experiment with {ptcp_id}")
             paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=50, csf3=csf3)
-            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, train=False, csf3=csf3)
+            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=50, train=False, csf3=csf3)
 
             vae_stgcn = models.get_vae_stgcn(device=device)
 
@@ -366,7 +366,7 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         y_pred_dicts = {}
         
         grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all', batch_size=50, csf3=csf3)
-        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', csf3=csf3)
+        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', batch_size=50, csf3=csf3)
         
         vae_stgcn = models.get_vae_stgcn(device=device)
 

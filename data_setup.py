@@ -96,7 +96,7 @@ def get_grouped_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True)
     for d, l in zip(data, labels):
       new_data.append([d, l])
     
-    dataloader = torch.utils.data.DataLoader(new_data, shuffle=True, batch_size=batch_size)
+    dataloader = torch.utils.data.DataLoader(new_data, shuffle=True, batch_size=batch_size, drop_last=True)
     return dataloader
 
 ## paired ##
@@ -150,6 +150,6 @@ def get_paired_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True):
 
     dataset = PairedSkeletonDataset(skeleton, label, ptcp_ids, ptcp_id=ptcp_id, train=train)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
     return dataloader
