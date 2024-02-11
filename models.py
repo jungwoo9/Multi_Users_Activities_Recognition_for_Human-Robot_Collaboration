@@ -7,7 +7,6 @@ from torch.autograd import Variable
 import math
 
 import numpy as np
-import scipy.sparse as sp
 
 # define an LSTM model
 class LSTMModel(nn.Module):
