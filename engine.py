@@ -386,4 +386,4 @@ def plot_cfm(y_true, y_pred):
     cfm = confusion_matrix(y_true, y_pred)
     cfmn = cfm.astype('float') / cfm.sum(axis=1)[:, np.newaxis]
     
-    ConfusionMatrixDisplay(confusion_matrix=cfmn, display_labels=[0, 1, 2, 3, 4, 5, 6, 7, 8]).plot()
+    ConfusionMatrixDisplay(confusion_matrix=cfmn, display_labels=['WW', "WR", "WP", "RW", "RR", "RP", "PW", "PR", "PP"]).plot()

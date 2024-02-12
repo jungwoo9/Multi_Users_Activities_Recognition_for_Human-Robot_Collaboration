@@ -31,7 +31,7 @@ def map_label(label_1, label_2):
     elif label_1==2 and label_2==2:
         return 5 # Requesting - Requesting
     elif label_1==2 and label_2==3:
-        return 6 # Requesting - Working
+        return 6 # Requesting - Preparing
     elif label_1==3 and label_2==1:
         return 7 # Preparing - Working
     elif label_1==3 and label_2==2:
