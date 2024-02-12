@@ -24,18 +24,22 @@ class EarlyStopper:
                 return True
         return False
 
-def train_lstm(model, trainloader, num_epochs=10, lr=0.00001, device='cpu'):
-    model.train()
-    
+def train_lstm(model, trainloader, testloader, num_epochs=10, lr=0.00001, device='cpu'):
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     
     train_rst_dict = {'loss':[], 'acc':[]}
     
+    early_stopper = EarlyStopper(patience=2, min_delta=0.02)
+    
     for epoch in range(num_epochs):
+        # train
+        model.train()
+        
         train_loss = 0
         train_acc = 0
+        
         for x, y in trainloader:
             x = x.to(device)
             y = y.to(device)
@@ -62,8 +66,17 @@ def train_lstm(model, trainloader, num_epochs=10, lr=0.00001, device='cpu'):
         train_rst_dict['loss'].append(train_loss)
         train_rst_dict['acc'].append(train_acc)
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}, Acc: {train_acc:.4f}')
+        
+        # test
+        test_rst_dict, y_true, y_pred = test_lstm(model, testloader, device)
+        print(f"test loss: {test_rst_dict['loss'][0]:.2f} | test acc: {test_rst_dict['acc'][0]:.2f}")
+        
+        # early stop
+        if early_stopper.early_stop(test_rst_dict['loss'][0]):          
+            print('early stopped')
+            break
       
-    return train_rst_dict
+    return train_rst_dict, test_rst_dict, y_true, y_pred
 
 def test_lstm(model, testloader, device='cpu'):
     model.eval()
@@ -117,12 +130,7 @@ def train_test_lstm(task='grouped-grouped', device='cpu', csf3=True):
 
             lstm = models.get_lstm(device=device)
 
-            train_rst_dict = train_lstm(model=lstm, trainloader=grouped_trainloader, device=device)
-            
-            test_rst_dict, y_true, y_pred = test_lstm(model=lstm, testloader=grouped_testloader, device=device)
-            
-            print(f"test loss: {test_rst_dict['loss'][0]:.2f} | test acc: {test_rst_dict['acc'][0]:.2f}")
-            print()
+            train_rst_dict, test_rst_dict, y_true, y_pred = train_lstm(model=lstm, trainloader=grouped_trainloader, testloader=grouped_testloader, device=device)
             
             train_rst_dicts[ptcp_id] = train_rst_dict
             test_rst_dicts[ptcp_id] = test_rst_dict
@@ -142,12 +150,7 @@ def train_test_lstm(task='grouped-grouped', device='cpu', csf3=True):
 
             lstm = models.get_lstm(device=device)
 
-            train_rst_dict = train_lstm(model=lstm, trainloader=paired_trainloader, device=device)
-            
-            test_rst_dict, y_true, y_pred = test_lstm(model=lstm, testloader=paired_testloader, device=device)
-            
-            print(f"test loss: {test_rst_dict['loss'][0]} | test acc: {test_rst_dict['acc'][0]}")
-            print()
+            train_rst_dict, test_rst_dict, y_true, y_pred = train_lstm(model=lstm, trainloader=paired_trainloader, testloader=paired_testloader, device=device)
             
             train_rst_dicts[ptcp_id] = train_rst_dict
             test_rst_dicts[ptcp_id] = test_rst_dict
@@ -167,17 +170,12 @@ def train_test_lstm(task='grouped-grouped', device='cpu', csf3=True):
         
         lstm = models.get_lstm(device=device)
 
-        train_rst_dict = train_lstm(model=lstm, trainloader=grouped_trainloader, device=device)
-        
-        test_rst_dict, y_true, y_pred = test_lstm(model=lstm, testloader=paired_testloader, device=device)
+        train_rst_dict, test_rst_dict, y_true, y_pred = train_lstm(model=lstm, trainloader=grouped_trainloader, testloader=paired_testloader, device=device)
         
         train_rst_dicts['all'] = train_rst_dict
         test_rst_dicts['all'] = test_rst_dict
         y_true_dicts['all'] = y_true
         y_pred_dicts['all'] = y_pred
-        
-        print(f"test loss: {test_rst_dict['loss'][0]} | test acc: {test_rst_dict['acc'][0]}")
-        print()
         
     return train_rst_dicts, test_rst_dicts, y_true_dicts, y_pred_dicts
 
