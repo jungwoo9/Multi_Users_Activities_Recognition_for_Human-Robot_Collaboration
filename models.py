@@ -360,21 +360,21 @@ class Encoder(torch.nn.Module):
     super().__init__()
 
     self.device = device
-    self.graph = args.gso.to(device)
+    self.graph = args.graph.to(device)
 
     modules = []
     
-    modules.append(st_gcn(3, 64, (9, 3), graph=self.graph, residual=False))
-    modules.append(st_gcn(64, 64, (9, 3), graph=self.graph, residual=True))
-    modules.append(st_gcn(64, 64, (9, 3), graph=self.graph, residual=True))
-    modules.append(st_gcn(64, 64, (9, 3), graph=self.graph, residual=True))
+    modules.append(st_gcn(3, 64, (args.Kt, args.Ks), graph=self.graph, residual=False))
+    modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
+    modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
+    modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
     modules.append(nn.AvgPool2d(kernel_size=(2, 2)))
     st_blocks = nn.Sequential(*modules)
 
     self.encoder = torch.nn.Sequential(
         st_blocks,
         torch.nn.Flatten(),
-        torch.nn.Linear(in_features=65*20*32, # 32 * 22 * 6
+        torch.nn.Linear(in_features=65*20*32,
                         out_features=2600),
         # torch.nn.BatchNorm1d(2600),
         torch.nn.ReLU(),
@@ -443,21 +443,17 @@ class VAE(torch.nn.Module):
     return x_mean, x_var, z, z_mean, z_log_var
 
 # define configurations for stgcn
-class ModelConfig:
+class STGCNConfig:
     def __init__(self):
         self.Kt = 9  # kernel for temporal convolution
         self.Ks = 3  # kernel for graph convolution
         self.n_his = 130  # number of historical time steps
-        self.act_func = 'glu'
         self.n_vertex = 20 # number of vertex in data
-        self.graph_conv_type = 'graph_conv'
-        self.gso = get_graph()  # graph shift operator | adjacent matrix
-        self.enable_bias = True  # enable bias terms in linear layers
-        self.droprate = 0.3
+        self.graph = get_graph()
 
 def get_vae_stgcn(args=None, device='cpu'):
     if args is None:
-        args = ModelConfig()
+        args = STGCNConfig()
     
     # Initialize vae + stgcn
     encoder = Encoder(args, device)
@@ -501,21 +497,19 @@ class Predictor(nn.Module):
     self.predict_layer = torch.nn.Sequential(
         torch.nn.Flatten(),
         torch.nn.Linear(in_features=65*20*32,
-                        out_features=10400), # 9
-        torch.nn.BatchNorm1d(10400),
-        torch.nn.ReLU(),
-        # torch.nn.Dropout(0.3),
-        torch.nn.Linear(in_features=10400, # 32 * 22 * 6
-                        out_features=5200),
-        torch.nn.BatchNorm1d(5200),
-        torch.nn.ReLU(),
-        torch.nn.Linear(in_features=5200,
                         out_features=9),
+        # torch.nn.BatchNorm1d(10400),
+        # torch.nn.ReLU(),
+        # torch.nn.Dropout(0.3),
+        # torch.nn.Linear(in_features=10400,
+        #                 out_features=5200),
+        # torch.nn.BatchNorm1d(5200),
+        # torch.nn.ReLU(),
+        # torch.nn.Linear(in_features=5200,
+        #                 out_features=9),
     )
 
   def forward(self, x):
-    # x = x.permute(0,2,1,3).to(torch.float32)
-    # x = x.permute(0,3,1,2).to(torch.float32)
     x = x.permute(0,2,1,3).to(torch.float32)
     output = self.predict_layer(self.stgcn_blocks(x))           
     output_probs = F.softmax(output, dim=1)
