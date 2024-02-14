@@ -5,3 +5,4 @@ This project explores the challenge of gathering data for multi-user interaction
 ## Overview
 
 * [data/](data) includes skeleton data for grouped and paired set
+![image](visualization/three_skeletons.gif)
