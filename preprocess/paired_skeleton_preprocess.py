@@ -164,56 +164,68 @@ def generate_window(skeleton_dict, label_dict):
     return skeleton_window_dict, label_window_dict
 
 def main():
-    # check participants id correctness
-    # path_directory = Path("./data/decompressed/paired_users_decompressed")
+    if args.step == 'all':
+        # check participants id correctness
+        path_directory = Path("./data/decompressed/paired_users_decompressed")
 
-    # get paired skeleton
-    # skeleton_dict, label_dict = extract_paired_skeleton_label(path_directory)
+        # get paired skeleton
+        skeleton_dict, label_dict = extract_paired_skeleton_label(path_directory)
 
-    # save skeleton and label dictionary
-    # path_to_save_skeleton = './data/skeleton/raw/paired_skeleton_dict.pkl'
-    # path_to_save_label = './data/skeleton/raw/paired_label_dict.pkl'
-    # save_dict(skeleton_dict, path_to_save_skeleton)
-    # save_dict(label_dict, path_to_save_label)
+        # save skeleton and label dictionary
+        path_to_save_skeleton = './data/skeleton/raw/paired_skeleton_dict.pkl'
+        path_to_save_label = './data/skeleton/raw/paired_label_dict.pkl'
+        save_dict(skeleton_dict, path_to_save_skeleton)
+        save_dict(label_dict, path_to_save_label)
 
-    # load skeleton and label dictionary
-    path_to_load_skeleton = './data/skeleton/raw/paired_skeleton_dict.pkl'
-    path_to_load_label = './data/skeleton/raw/paired_label_dict.pkl'
-    skeleton_dict = load_dict(path_to_load_skeleton)
-    label_dict = load_dict(path_to_load_label)
+        # identify participants as 100 and 200
+        ptcp_dict = identify_ptcp(skeleton_dict)
 
-    # identify participants as 100 and 200
-    ptcp_dict = identify_ptcp(skeleton_dict)
+        # normalize skeleton
+        norm_skeleton_dict = normalize_process(skeleton_dict)
 
-    # normalize skeleton
-    norm_skeleton_dict = normalize_process(skeleton_dict)
+        # save normalized skeleton dictionary and label dictionary
+        path_to_save_skeleton = './data/skeleton/normalized/normalized_paired_skeleton_dict.pkl'
+        path_to_save_label = './data/skeleton/normalized/paired_label_dict.pkl'
+        path_to_save_ptcp = './data/skeleton/normalized/participant_ids.pkl'
+        save_dict(norm_skeleton_dict, path_to_save_skeleton)
+        save_dict(label_dict, path_to_save_label)
+        save_dict(ptcp_dict, path_to_save_ptcp)
 
-    # save normalized skeleton dictionary and label dictionary that removed consecutive duplicates
-    path_to_save_skeleton = './data/skeleton/normalized/normalized_paired_skeleton_dict.pkl'
-    path_to_save_label = './data/skeleton/normalized/removed_duplicates_paired_label_dict.pkl'
-    save_dict(norm_skeleton_dict, path_to_save_skeleton)
-    save_dict(label_dict, path_to_save_label)
+    elif args.step == 'normalise':
+        # load raw skeleton and label dictionary
+        path_to_load_skeleton = './data/skeleton/raw/paired_skeleton_dict.pkl'
+        path_to_load_label = './data/skeleton/raw/paired_label_dict.pkl'
+        skeleton_dict = load_dict(path_to_load_skeleton)
+        label_dict = load_dict(path_to_load_label)
 
+        # identify participants as 100 and 200
+        ptcp_dict = identify_ptcp(skeleton_dict)
+
+        # normalize skeleton
+        norm_skeleton_dict = normalize_process(skeleton_dict)
+
+        # save normalized skeleton dictionary and label dictionary
+        path_to_save_skeleton = './data/skeleton/normalized/normalized_paired_skeleton_dict.pkl'
+        path_to_save_label = './data/skeleton/normalized/paired_label_dict.pkl'
+        path_to_save_ptcp = './data/skeleton/normalized/participant_ids.pkl'
+        save_dict(norm_skeleton_dict, path_to_save_skeleton)
+        save_dict(label_dict, path_to_save_label)
+        save_dict(ptcp_dict, path_to_save_ptcp)
+
+    elif args.step == 'generate_window':
+        # load normalised skeleton, label, and ptcp id dictionary
+        path_to_load_skeleton = './data/skeleton/normalized/normalized_paired_skeleton_dict.pkl'
+        path_to_load_label = './data/skeleton/normalized/paired_label_dict.pkl'
+        path_to_load_ptcp = './data/skeleton/normalized/participant_ids.pkl'
+        norm_skeleton_dict = load_dict(path_to_load_skeleton)
+        label_dict = load_dict(path_to_load_label)
+        ptcp_dict = load_dict(path_to_load_ptcp)
+    
     # concatenate two participants and then remove near new activity
     concat_skeleton_dict, concat_label_dict = remove_near_new_activity(*concatenate_two_skeleton(norm_skeleton_dict, label_dict, ptcp_dict))
     
     # generate window
     skeleton_window_dict, label_window_dict = generate_window(concat_skeleton_dict, concat_label_dict)
-
-    s1label = []
-    s2label = []
-    s3label = []
-    for k, l in label_window_dict.items():
-        if 's1' not in k:
-            s1label.extend(l)
-        if 's2' not in k:
-            s2label.extend(l)
-        if 's3' not in k:
-            s3label.extend(l)
-        print(k, Counter(l))
-    print('s1', Counter(s1label), len(s1label))
-    print('s2', Counter(s2label), len(s2label))
-    print('s3', Counter(s3label), len(s3label))
 
     # save paired skeleton and label dictionary
     path_to_save_skeleton = './data/skeleton/final/paired/paired_window_skeleton_dict.pkl'
