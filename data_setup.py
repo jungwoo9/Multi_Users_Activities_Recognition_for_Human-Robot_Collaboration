@@ -58,7 +58,8 @@ def generate_grouped_data(skeleton_dict, data_):
   for k in data_:
     label = map_label(int(k.split("_")[2][1:]), int(k.split("_")[3][1:]))
 
-    for _ in range(skeleton_dict[k].shape[0]):
+    sk = np.array(skeleton_dict[k])
+    for _ in range(sk.shape[0]):
       labels.append(label)
     data.append(skeleton_dict[k])
     
