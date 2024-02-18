@@ -3,20 +3,27 @@ import sqlite3
 from rosidl_runtime_py.utilities import get_message
 from pathlib import Path
 
-def extract_data_from_db(path_db):
+def extract_data_from_db(path_db, num_joint=11):
     """
     Extracts id(row index in database), topic id, timestamp, and data from a database file.
     The data can be either label or skeleton. 
     For pair data, participant id is included in the skeleton.
     
     Uses a predefined joint index to extract specific 11 joints from the skeleton data.
+    If num_joint is 32, then all joints are extracted.
     """
 
     # select joints for extraction
     azure_joint_index = {"PELVIS":0, "SPINE_NAVAL":1, "SPINE_CHEST":2, "NECK":3, "CLAVICLE_LEFT":4, "SHOULDER_LEFT":5, "ELBOW_LEFT":6, "WRIST_LEFT":7, "HAND_LEFT":8, "HANDTIP_LEFT":9, "THUMB_LEFT":10, "CLAVICLE_RIGHT":11, "SHOULDER_RIGHT":12, "ELBOW_RIGHT":13, "WRIST_RIGHT":14, "HAND_RIGHT":15, "HANDTIP_RIGHT":16, "THUMB_RIGHT":17, "HIP_LEFT":18, "KNEE_LEFT":19, "ANKLE_LEFT":20, "FOOT_LEFT":21, "HIP_RIGHT":22, "KNEE_RIGHT":23, "ANKLE_RIGHT":24, "FOOT_RIGHT":25, "HEAD":26, "NOSE":27, "EYE_LEFT":28, "EAR_LEFT":29, "EYE_RIGHT":30, "EAR_RIGHT":31}
 
-    joints = ["PELVIS", "SPINE_NAVAL", "SPINE_CHEST", "NECK", "HEAD", "SHOULDER_RIGHT", "SHOULDER_LEFT", "ELBOW_RIGHT",  "ELBOW_LEFT", "HAND_RIGHT", "HAND_LEFT"]
-    Index = sorted([azure_joint_index[i] for i in joints])
+    if num_joint==11:
+        # joints we need
+        joints = ["PELVIS", "SPINE_NAVAL", "SPINE_CHEST", "NECK", "HEAD", "SHOULDER_RIGHT", "SHOULDER_LEFT", "ELBOW_RIGHT",  "ELBOW_LEFT", "HAND_RIGHT", "HAND_LEFT"]
+        Index = sorted([azure_joint_index[i] for i in joints])
+    
+    # all joints
+    elif num_joint==32:
+        Index = [*range(32)]
     
     # connect database
     conn = sqlite3.connect(path_db)
@@ -70,7 +77,10 @@ def extract_data_from_db(path_db):
             skeleton = [marker_array.markers[i].pose.position for i in Index]
             
             # skip when the marker does not include all joints we needed
-            if len(skeleton) != 11:
+            if num_joint==11 and len(skeleton) != 11:
+                continue
+            
+            elif num_joint==32 and len(skeleton) != 32:
                 continue
 
             data.append(skeleton)

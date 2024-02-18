@@ -37,6 +37,33 @@ def extract_paired_skeleton_label(path_directory):
 
     return skeleton_dict, label_dict
 
+def extract_paired_skeleton_all_joints_from_directory(path_directory):
+    skeleton_dict = {}
+    label_dict = {}
+    for d in sorted(path_directory.iterdir()):
+        if d.is_dir():
+            for db in d.iterdir():
+                if db.is_file():
+                    if 'label' in str(db):
+                        _, _, _, label = extract_data_from_db(db)
+                        
+                        label_dict["_".join(db.parts[-2].split("_")[:-2]+[db.parts[-2].split("_")[-2][-1], db.parts[-2].split("_")[-1]])] = label
+                        print(db, len(label))
+                    
+                    elif 'skeleton' in str(db):
+                        _, _, _, skeleton = extract_data_from_db(db, num_joint=32)
+
+                        # skip if skeleton is empty
+                        if skeleton == []:
+                            continue
+                        
+                        skeleton_dict["_".join(db.parts[-2].split("_")[:-2]+[db.parts[-2].split("_")[-2][-1], db.parts[-2].split("_")[-1]])] = skeleton
+
+                        skeleton = np.array(skeleton)
+                        print(db, skeleton.shape)
+        
+    return skeleton_dict, label_dict
+
 def save_dict(dict_, path_to_save):
     """
     Saves a dictionary to a pickle file.
@@ -220,6 +247,37 @@ def main():
         norm_skeleton_dict = load_dict(path_to_load_skeleton)
         label_dict = load_dict(path_to_load_label)
         ptcp_dict = load_dict(path_to_load_ptcp)
+
+    elif args.step == "save_raw":
+        skeleton_dict, _ = extract_paired_skeleton_all_joints_from_directory(Path("./data/decompressed/paired_users_decompressed"))
+
+        # save skeleton dictionary file as pickle
+        path_to_save = './data/skeleton/raw/paired_skeleton_all_joints_dict.pkl'
+        save_dict(skeleton_dict, path_to_save)
+
+        # load skeleton dictionary file from pickle
+        path_to_load = './data/skeleton/raw/paired_skeleton_all_joints_dict.pkl'
+        skeleton_dict = load_dict(path_to_load)
+
+        new_skeleton_dict = {}
+        for k in skeleton_dict.keys():
+            new_skeletons = []
+            for sk in skeleton_dict[k]:
+                x = []
+                y = []
+                z = []
+                for node in sk:
+                    x.append(node.x)
+                    y.append(node.y)
+                    z.append(node.z)
+                new_skeletons.append([x, y, z])
+            new_skeleton_dict[k] = new_skeletons
+
+        # save skeleton dictionary file as pickle
+        path_to_save = './data/skeleton/all_joints/paired_skeleton_all_joints_dict.pkl'
+        save_dict(new_skeleton_dict, path_to_save)
+
+        return 0
     
     # concatenate two participants and then remove near new activity
     concat_skeleton_dict, concat_label_dict = remove_near_new_activity(*concatenate_two_skeleton(norm_skeleton_dict, label_dict, ptcp_dict))
@@ -236,7 +294,7 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("step", default='generate_window', choices=['all', 'normalise', 'generate_window'], help="choose what step to start with | step is extract - normalise - generate_window(including concatenation)")
+    parser.add_argument("step", default='generate_window', choices=['all', 'normalise', 'generate_window', 'save_raw'], help="choose what step to start with | step is extract - normalise - generate_window(including concatenation) | save_raw for visualization preparation")
     parser.add_argument("window_size", default=130, type=int, help="decide window size")
     parser.add_argument("new_activity_length", default=52, type=int, help="decide new activity length to delete those lengh time")
 
