@@ -31,7 +31,7 @@ def label_to_works(label):
         return "Preparing", "Requesting"
     elif label == 9:
         return "Preparing", "Preparing"
-  
+
 def works_to_label(label_1, label_2):
     """
     1 : Working

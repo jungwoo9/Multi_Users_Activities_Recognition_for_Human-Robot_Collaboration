@@ -169,7 +169,6 @@ def remove_near_new_activity(skeleton_dict, label_dict):
         
     return new_skeleton_dict, new_label_dict
 
-
 def generate_window(skeleton_dict, label_dict):
     skeleton_window_dict = {}
     label_window_dict = {}
