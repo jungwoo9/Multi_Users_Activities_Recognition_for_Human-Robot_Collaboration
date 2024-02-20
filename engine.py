@@ -7,6 +7,8 @@ import data_setup, models
 import numpy as np
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
+import pickle
+
 class EarlyStopper:
     def __init__(self, patience=2, min_delta=0.01):
         self.patience = patience
@@ -381,6 +383,15 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         y_pred_dicts['all'] = y_pred
         
     return vae_stgcn_train_rst_dict, predictor_train_rst_dict, test_rst_dicts, y_true_dicts, y_pred_dicts
+
+def save_result(dict_keys, dict_items, dict_name):
+    # path_to_save = "/content/drive/MyDrive/3rd_year_project/result/output_dict/" + dict_name.split("_")[0] + "/" + dict_name + ".pkl"
+    path_to_save = "./result/output_dict/" + dict_name.split("_")[0] + "/" + dict_name + ".pkl"
+
+    dict_ = {k:i for (k, i) in zip(dict_keys, dict_items)}
+
+    with open(path_to_save, 'wb') as f:
+        pickle.dump(dict_, f)
 
 def plot_cfm(y_true, y_pred):
     cfm = confusion_matrix(y_true, y_pred)
