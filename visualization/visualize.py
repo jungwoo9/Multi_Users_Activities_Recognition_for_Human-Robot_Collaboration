@@ -539,7 +539,6 @@ def plot_gif():
     right_frame.pack_propagate(False)
 
     gif_path = get_gif_path()
-    print(gif_path)
     gif = Image.open(gif_path)
 
     # split the GIF into frames
@@ -608,6 +607,9 @@ def choose_raw_norm():
         raw_window()
     
     elif raw_norm.get() == 'norm':
+        norm_window()
+
+    elif raw_norm.get() == "recon":
         norm_window()
 
     else:
@@ -739,8 +741,11 @@ def img_ani_window():
     if img_ani.get()=="img":
         both_btn = Radiobutton(left_frame, command=choose_raw_norm ,text="both", value="both", variable=raw_norm, font=("Arial", 14), bg='linen')
         both_btn.place(x=250, y=130)
+    else:
+        recon_btn = Radiobutton(left_frame, command=choose_raw_norm ,text="reconstruction", value="recon", variable=raw_norm, font=("Arial", 14), bg='linen')
+        recon_btn.place(x=250, y=130)
     raw_btn.place(x=10, y=130)
-    norm_btn.place(x=100, y=130)
+    norm_btn.place(x=100 if img_ani.get()=="img" else 90, y=130)
 
 def ani_window():
     global left_frame
