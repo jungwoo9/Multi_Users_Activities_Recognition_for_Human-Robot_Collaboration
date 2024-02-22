@@ -105,11 +105,11 @@ def concatenate_two_skeleton(skeleton_dict):
         if int(t_1[1:]) >= 2:
             continue
 
+        # if int(ptcp_1[1:]) > 4:
+        #     continue
+
         if ptcp is None:
             ptcp = ptcp_1
-        
-        if int(ptcp_1[1:]) > 4:
-            continue
 
         elif ptcp != ptcp_1:
             path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp}.pkl'
@@ -137,6 +137,51 @@ def concatenate_two_skeleton(skeleton_dict):
                 grouped_skeleton[new_name] = new_skeleton
 
     path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp_1}.pkl'
+    save_single_skeleton_dict(grouped_skeleton, path_to_save)
+        
+    return grouped_skeleton
+
+def concatenate_two_skeleton_by_ptcp(skeleton_dict):
+    grouped_skeleton = {}
+
+    ptcp = None
+
+    for k in skeleton_dict.keys():
+        print(k)
+        ptcp_1 = k.split("_")[0] # participant
+        act_1 = k.split("_")[1] # activity
+        t_1 = k.split("_")[2] # ignore
+        r_1 = k.split("_")[3] # repetition
+
+        if int(ptcp_1[1:]) == 1:
+            continue
+
+        if ptcp is None:
+            ptcp = ptcp_1
+
+        elif ptcp != ptcp_1:
+            path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp}_by_ptcp.pkl'
+            save_single_skeleton_dict(grouped_skeleton, path_to_save)
+            ptcp = ptcp_1
+            grouped_skeleton = {}
+
+        for k_ in skeleton_dict.keys():
+            if ptcp_1 in k_ and k != k_:
+                ptcp_2 = k_.split("_")[0]
+                act_2 = k_.split("_")[1]
+                t_2 = k_.split("_")[2]
+                r_2 = k_.split("_")[3]
+
+                new_name = "_".join([ptcp_1, ptcp_2, act_1, act_2, t_1, t_2, r_1, r_2, "skeleton"])
+                
+                new_skeleton = []
+                for sk1 in skeleton_dict[k]:
+                    for sk2 in skeleton_dict[k_]:
+                        new_skeleton.append(np.concatenate((np.array(sk1),np.array(sk2)), axis=2))
+                
+                grouped_skeleton[new_name] = new_skeleton
+
+    path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp_1}_by_ptcp.pkl'
     save_single_skeleton_dict(grouped_skeleton, path_to_save)
         
     return grouped_skeleton
@@ -169,7 +214,7 @@ def main():
         path_to_save = './data/skeleton/normalized/normalized_single_skeleton_dict.pkl'
         save_single_skeleton_dict(norm_skeleton_dict, path_to_save)
 
-    elif args.step == 'generate_window':
+    elif args.step == 'generate_window' or args.step == "generate_window_by_ptcp":
         # load skeleton dictionary file from pickle
         path_to_load = './data/skeleton/normalized/normalized_single_skeleton_dict.pkl'
         norm_skeleton_dict = load_single_skeleton_dict(path_to_load)
@@ -209,12 +254,15 @@ def main():
     window_skeleton_dict = generate_window(norm_skeleton_dict)
 
     # concatenate data
-    grouped_window_skeleton_dict = concatenate_two_skeleton(window_skeleton_dict)
+    if args.step == "generate_window_by_ptcp":
+        grouped_window_skeleton_dict = concatenate_two_skeleton_by_ptcp(window_skeleton_dict)
+    else:
+        grouped_window_skeleton_dict = concatenate_two_skeleton(window_skeleton_dict)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("step", default='generate_window', choices=['all', 'normalise', 'generate_window', 'save_raw'], help="choose what step to start with | step is extract - normalise - generate_window(including concatenation) | save_raw for visualization preparation")
+    parser.add_argument("step", default='generate_window', choices=['all', 'normalise', 'generate_window', 'generate_window_by_ptcp', 'save_raw'], help="choose what step to start with | step is extract - normalise - generate_window(including concatenation) | save_raw for visualization preparation")
     parser.add_argument("window_size", default=130, type=int, help="decide window size")
     parser.add_argument("new_activity_length", default=26, type=int, help="decide new activity length to delete those lengh time")
 
