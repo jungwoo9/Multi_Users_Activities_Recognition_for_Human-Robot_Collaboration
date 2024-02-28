@@ -67,6 +67,7 @@ def generate_grouped_data(skeleton_dict, data_):
   
 def update_all_dict(csf3):
     base_dict = {}
+
     for i in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
         # in case of csf3
         if csf3:
@@ -92,6 +93,21 @@ def get_grouped_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True)
         train_, test_ = split_train_test(grouped_window_skeleton_dict, ptcp_id)
         
         data, labels = generate_grouped_data(grouped_window_skeleton_dict, train_ if train else test_)
+    
+    new_data = []
+    for d, l in zip(data, labels):
+      new_data.append([d, l])
+    
+    dataloader = torch.utils.data.DataLoader(new_data, shuffle=True, batch_size=batch_size, drop_last=True)
+    return dataloader
+
+def get_grouped_by_ptcp_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True):
+    if csf3:
+        grouped_window_skeleton_dict = load_dict(f"./project/data/grouped_by_ptcp/grouped_single_skeleton_dict_{ptcp_id}_by_ptcp.pkl")
+    else:
+        grouped_window_skeleton_dict = load_dict(f"/content/drive/MyDrive/3rd_year_project/data/grouped_single_skeleton_dict_{ptcp_id}_by_ptcp.pkl")
+
+    data, labels = generate_grouped_data(grouped_window_skeleton_dict, grouped_window_skeleton_dict.keys())
     
     new_data = []
     for d, l in zip(data, labels):

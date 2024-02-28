@@ -153,14 +153,17 @@ def concatenate_two_skeleton_by_ptcp(skeleton_dict):
         t_1 = k.split("_")[2] # ignore
         r_1 = k.split("_")[3] # repetition
 
-        if int(ptcp_1[1:]) == 1:
+        # if int(ptcp_1[1:]) == 1:
+        #     continue
+
+        if int(t_1[1:]) >= 4:
             continue
 
         if ptcp is None:
             ptcp = ptcp_1
 
         elif ptcp != ptcp_1:
-            path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp}_by_ptcp.pkl'
+            path_to_save = f'./data/skeleton/final/grouped_by_ptcp/grouped_single_skeleton_dict_{ptcp}_by_ptcp.pkl'
             save_single_skeleton_dict(grouped_skeleton, path_to_save)
             ptcp = ptcp_1
             grouped_skeleton = {}
@@ -174,6 +177,9 @@ def concatenate_two_skeleton_by_ptcp(skeleton_dict):
 
                 new_name = "_".join([ptcp_1, ptcp_2, act_1, act_2, t_1, t_2, r_1, r_2, "skeleton"])
                 
+                if int(t_2[1:]) >= 4:
+                    continue
+                
                 new_skeleton = []
                 for sk1 in skeleton_dict[k]:
                     for sk2 in skeleton_dict[k_]:
@@ -181,7 +187,7 @@ def concatenate_two_skeleton_by_ptcp(skeleton_dict):
                 
                 grouped_skeleton[new_name] = new_skeleton
 
-    path_to_save = f'./data/skeleton/final/grouped/grouped_single_skeleton_dict_{ptcp_1}_by_ptcp.pkl'
+    path_to_save = f'./data/skeleton/final/grouped_by_ptcp/grouped_single_skeleton_dict_{ptcp_1}_by_ptcp.pkl'
     save_single_skeleton_dict(grouped_skeleton, path_to_save)
         
     return grouped_skeleton
