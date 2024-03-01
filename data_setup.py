@@ -40,38 +40,38 @@ def map_label(label_1, label_2):
         return 9 # Preparing - Preparing
     
 def split_train_test(skeleton_dict, ptcp_id='s01'):
-  train_ = []
-  test_ = []
+    train_ = []
+    test_ = []
 
-  for k, v in skeleton_dict.items():
-    # test
-    if ptcp_id in k:
-      test_.append(k)
-    else:
-      train_.append(k)
+    for k, v in skeleton_dict.items():
+        # test
+        if ptcp_id in k:
+            test_.append(k)
+        else:
+            train_.append(k)
 
-  return train_, test_
+    return train_, test_
 
 def generate_grouped_data(skeleton_dict, data_):
-  data = []
-  labels = []
-  for k in data_:
-    label = map_label(int(k.split("_")[2][1:]), int(k.split("_")[3][1:]))
+    data = []
+    labels = []
+    for k in data_:
+        label = map_label(int(k.split("_")[2][1:]), int(k.split("_")[3][1:]))
 
-    sk = np.array(skeleton_dict[k])
-    for _ in range(sk.shape[0]):
-      labels.append(label)
-    data.append(skeleton_dict[k])
-    
-  return np.concatenate(data), labels
-  
+        sk = np.array(skeleton_dict[k])
+        for _ in range(sk.shape[0]):
+            labels.append(label)
+        data.append(skeleton_dict[k])
+
+    return np.concatenate(data), labels
+
 def update_all_dict(csf3):
     base_dict = {}
 
     for i in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
         # in case of csf3
         if csf3:
-            tmp_dict = load_dict(f"./project/data/grouped/grouped_single_skeleton_dict_{i}.pkl")
+            tmp_dict = load_dict(f"../project/data/grouped/grouped_single_skeleton_dict_{i}.pkl")
             base_dict.update(tmp_dict)
         
         # in case of colab
@@ -103,7 +103,7 @@ def get_grouped_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True)
 
 def get_grouped_by_ptcp_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True):
     if csf3:
-        grouped_window_skeleton_dict = load_dict(f"./project/data/grouped_by_ptcp/grouped_single_skeleton_dict_{ptcp_id}_by_ptcp.pkl")
+        grouped_window_skeleton_dict = load_dict(f"../project/data/grouped_by_ptcp/grouped_single_skeleton_dict_{ptcp_id}_by_ptcp.pkl")
     else:
         grouped_window_skeleton_dict = load_dict(f"/content/drive/MyDrive/3rd_year_project/data/grouped_single_skeleton_dict_{ptcp_id}_by_ptcp.pkl")
 
@@ -156,8 +156,8 @@ def generate_paired_data(path_skeleton, path_label):
     
 def get_paired_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True):
     if csf3:
-        path_paired_skeleton = "./project/data/paired/paired_window_skeleton_dict.pkl"
-        path_paired_label = "./project/data/paired/paired_window_label_dict.pkl"
+        path_paired_skeleton = "../project/data/paired/paired_window_skeleton_dict.pkl"
+        path_paired_label = "../project/data/paired/paired_window_label_dict.pkl"
 
     else:
         path_paired_skeleton = "/content/drive/MyDrive/3rd_year_project/data/paired_window_skeleton_dict.pkl"
