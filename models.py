@@ -10,12 +10,15 @@ import numpy as np
 
 # define an LSTM model
 class LSTMModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=1):
+    def __init__(self, input_size, hidden_size, output_size, num_layers=1, batch=True):
         super(LSTMModel, self).__init__()
+        self.batch = batch
+
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
-        self.batch_norm1 = nn.BatchNorm1d(hidden_size)
         self.lstm2 = nn.LSTM(hidden_size, 150, num_layers, batch_first=True)
-        self.batch_norm2 = nn.BatchNorm1d(150)
+        if batch:
+            self.batch_norm1 = nn.BatchNorm1d(hidden_size)
+            self.batch_norm2 = nn.BatchNorm1d(150)
         self.relu = nn.ReLU()
         self.fc1 = nn.Linear(150, 9)
 
@@ -23,10 +26,12 @@ class LSTMModel(nn.Module):
         x = x.view(x.shape[0], x.shape[1], -1).float()
         # print(x.shape) # torch.Size([256, 130, 60])
         lstm_out, _ = self.lstm(x)
-        lstm_out = self.batch_norm1(lstm_out.permute(0, 2, 1)).permute(0, 2, 1)
+        if self.batch:
+            lstm_out = self.batch_norm1(lstm_out.permute(0, 2, 1)).permute(0, 2, 1)
         # print(lstm_out.shape) # torch.Size([256, 130, 250])
         lstm_out2, _ = self.lstm2(lstm_out)
-        lstm_out2 = self.batch_norm2(lstm_out2.permute(0, 2, 1)).permute(0, 2, 1)
+        if self.batch:
+            lstm_out2 = self.batch_norm2(lstm_out2.permute(0, 2, 1)).permute(0, 2, 1)
         # print(lstm_out2.shape) # torch.Size([256, 130, 150])
         lstm_out2 = lstm_out2[:, -1, :]
         # print(lstm_out2.shape) # torch.Size([256, 150])
@@ -34,9 +39,9 @@ class LSTMModel(nn.Module):
         output_probs = F.softmax(hidden_output, dim=1)
         return output_probs
 
-def get_lstm(input_size=3*20, hidden_size=250, output_size=9, device='cpu'):
+def get_lstm(input_size=3*20, hidden_size=250, output_size=9, batch=True, device='cpu'):
     # Initialize the model
-    lstm = LSTMModel(input_size, hidden_size, output_size, 1).to(device)
+    lstm = LSTMModel(input_size, hidden_size, output_size, 1, batch=batch).to(device)
 
     return lstm
 
