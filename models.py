@@ -36,8 +36,8 @@ class LSTMModel(nn.Module):
         lstm_out2 = lstm_out2[:, -1, :]
         # print(lstm_out2.shape) # torch.Size([256, 150])
         hidden_output = self.fc1(lstm_out2)
-        output_probs = F.softmax(hidden_output, dim=1)
-        return output_probs
+        # output_probs = F.softmax(hidden_output, dim=1)
+        return hidden_output
 
 def get_lstm(input_size=3*20, hidden_size=250, output_size=9, batch=True, device='cpu'):
     # Initialize the model
@@ -517,9 +517,9 @@ class Predictor(nn.Module):
   def forward(self, x):
     x = x.permute(0,2,1,3).to(torch.float32)
     output = self.predict_layer(self.stgcn_blocks(x))           
-    output_probs = F.softmax(output, dim=1)
+    # output_probs = F.softmax(output, dim=1)
     
-    return output_probs
+    return output
     
 def get_predictor(vae_stgcn, device='cpu'):
     stgcn_blocks = vae_stgcn.encoder.encoder[0]
