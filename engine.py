@@ -32,6 +32,8 @@ class EarlyStopper:
         self.min_validation_loss = float('inf')
 
     def early_stop(self, validation_loss):
+        if validation_loss < 0.1:
+            return True
         if validation_loss < self.min_validation_loss:
             self.min_validation_loss = validation_loss
             self.counter = 0
