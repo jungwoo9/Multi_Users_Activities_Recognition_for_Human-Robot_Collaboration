@@ -96,7 +96,7 @@ def get_grouped_dataloader(ptcp_id='s01', train=True, batch_size=256, csf3=True)
     
     new_data = []
     for d, l in zip(data, labels):
-      new_data.append([d, l])
+        new_data.append([d, l])
     
     dataloader = torch.utils.data.DataLoader(new_data, shuffle=True, batch_size=batch_size, drop_last=True)
     return dataloader
@@ -111,7 +111,7 @@ def get_grouped_by_ptcp_dataloader(ptcp_id='s01', train=True, batch_size=256, cs
     
     new_data = []
     for d, l in zip(data, labels):
-      new_data.append([d, l])
+        new_data.append([d, l])
     
     dataloader = torch.utils.data.DataLoader(new_data, shuffle=True, batch_size=batch_size, drop_last=True)
     return dataloader
