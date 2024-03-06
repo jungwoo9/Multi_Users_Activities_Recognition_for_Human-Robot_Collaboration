@@ -369,10 +369,11 @@ class Encoder(torch.nn.Module):
 
     modules = []
     
-    modules.append(st_gcn(3, 64, (args.Kt, args.Ks), graph=self.graph, residual=False))
-    modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
-    modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
-    modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
+    modules.append(st_gcn(3, 64, (args.Kt, args.Ks), dropout=args.stgcn_dropout, graph=self.graph, residual=False))
+    for _ in range(args.num_stgcn_blocks-1):
+        modules.append(st_gcn(64, 64, (args.Kt, args.Ks), dropout=args.stgcn_dropout, graph=self.graph, residual=True))
+    # modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
+    # modules.append(st_gcn(64, 64, (args.Kt, args.Ks), graph=self.graph, residual=True))
     modules.append(nn.AvgPool2d(kernel_size=(2, 2)))
     st_blocks = nn.Sequential(*modules)
 
@@ -449,16 +450,27 @@ class VAE(torch.nn.Module):
 
 # define configurations for stgcn
 class STGCNConfig:
-    def __init__(self):
+    def __init__(self, args=None):
         self.Kt = 9  # kernel for temporal convolution
         self.Ks = 3  # kernel for graph convolution
-        self.n_his = 130  # number of historical time steps
-        self.n_vertex = 20 # number of vertex in data
+        self.num_stgcn_blocks = 4
+        self.stgcn_dropout = 0
         self.graph = get_graph()
+
+        if args is not None:
+            self.set_configs(args=args)
+
+    def set_configs(self, args):
+        self.Kt = args["Kt"]
+        self.Ks = args["Ks"]
+        self.num_stgcn_blocks = args["num_stgcn_blocks"]
+        self.stgcn_dropout = args["stgcn_dropout"]
 
 def get_vae_stgcn(args=None, device='cpu'):
     if args is None:
         args = STGCNConfig()
+    else:
+        args = STGCNConfig(args=args)
     
     # Initialize vae + stgcn
     encoder = Encoder(args, device)
@@ -496,23 +508,31 @@ def vae_loss(x, x_mean, x_var, z, mean, log_var, device):
 
 # define predictor
 class Predictor(nn.Module):
-  def __init__(self, stgcn_blocks):
+  def __init__(self, stgcn_blocks, args):
     super().__init__()
     self.stgcn_blocks = stgcn_blocks
-    self.predict_layer = torch.nn.Sequential(
-        torch.nn.Flatten(),
-        torch.nn.Linear(in_features=65*20*32,
-                        out_features=9),
-        # torch.nn.BatchNorm1d(10400),
-        # torch.nn.ReLU(),
-        # torch.nn.Dropout(0.3),
-        # torch.nn.Linear(in_features=10400,
-        #                 out_features=5200),
-        # torch.nn.BatchNorm1d(5200),
-        # torch.nn.ReLU(),
-        # torch.nn.Linear(in_features=5200,
-        #                 out_features=9),
-    )
+    if args["number_of_predictor_layers"] == 1:
+        self.predict_layer = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.Linear(in_features=65*20*32,
+                            out_features=9),
+        )
+    else:
+        self.predict_layer = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.Linear(in_features=65*20*32,
+                            out_features=10400),
+            # torch.nn.BatchNorm1d(10400),
+            torch.nn.ReLU(),
+            # torch.nn.Dropout(0.3),
+            torch.nn.Linear(in_features=10400,
+                            out_features=5200),
+            # torch.nn.BatchNorm1d(5200),
+            torch.nn.ReLU(),
+            # torch.nn.Dropout(0.3),
+            torch.nn.Linear(in_features=5200,
+                            out_features=9),
+        )
 
   def forward(self, x):
     x = x.permute(0,2,1,3).to(torch.float32)
@@ -521,9 +541,9 @@ class Predictor(nn.Module):
     
     return output
     
-def get_predictor(vae_stgcn, device='cpu'):
+def get_predictor(vae_stgcn, args=None, device='cpu'):
     stgcn_blocks = vae_stgcn.encoder.encoder[0]
-    predictor = Predictor(stgcn_blocks).to(device)
+    predictor = Predictor(stgcn_blocks, args).to(device)
     
     # freeze stgcn blocks parameters
     for param in predictor.stgcn_blocks.parameters():

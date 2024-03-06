@@ -24,7 +24,7 @@ def load_configs(experiment_name, model, csf3):
 
     return js
 
-class EarlyStopper:
+class EarlyStopping:
     def __init__(self, patience=2, min_delta=0.01):
         self.patience = patience
         self.min_delta = min_delta
@@ -48,10 +48,12 @@ def train_lstm(model, trainloader, testloader, config, device='cpu'):
     criterion = nn.CrossEntropyLoss()
     if config["optimizer"]=="Adam":
         optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=config["lr"])
     
     train_rst_dict = {'loss':[], 'acc':[]}
     
-    early_stopper = EarlyStopper(patience=2, min_delta=0.02)
+    early_stopper = EarlyStopping(patience=2, min_delta=0.02)
     
     for epoch in range(config["num_epochs"]):
         # train
@@ -221,17 +223,19 @@ def train_test_lstm(task='grouped-grouped', experiment_name="example", device='c
         
     return train_rst_dicts, test_rst_dicts, y_true_dicts, y_pred_dicts
 
-def train_vae_stgcn(model, trainloader, num_epochs=4, lr=0.0001, device='cpu'):
+def train_vae_stgcn(model, trainloader, config, device='cpu'):
     model.train()
     
     # Loss and optimizer
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    
+    if config["optimizer"] == "Adam":
+        optimizer = optim.Adam(model.parameters(), lr=config['lr'])
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=config['lr'])
+
     train_rst_dict = {'loss':[]}
     
-    for epoch in range(num_epochs):
+    for epoch in range(config['num_epochs_vae']):
         train_loss = 0
-        train_acc = 0
         for x, _ in trainloader:
             x = x.to(device)
             
@@ -251,20 +255,23 @@ def train_vae_stgcn(model, trainloader, num_epochs=4, lr=0.0001, device='cpu'):
         
         train_loss /= len(trainloader)
         train_rst_dict['loss'].append(train_loss)
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}')
+        print(f'Epoch [{epoch+1}/{config["num_epochs_vae"]}], Loss: {train_loss:.4f}')
       
     return train_rst_dict
     
-def train_predictor(model, trainloader, testloader, num_epochs=10, lr=0.0001, device='cpu'):
+def train_predictor(model, trainloader, testloader, config, device='cpu'):
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    if config["optimizer"] == "Adam":
+        optimizer = optim.Adam(model.parameters(), lr=config['lr'])
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=config['lr'])
     
     train_rst_dict = {'loss':[], 'acc':[]}
     
-    early_stopper = EarlyStopper(patience=2, min_delta=0.01)
+    early_stopper = EarlyStopping(patience=2, min_delta=0.01)
     
-    for epoch in range(num_epochs):
+    for epoch in range(config["num_epochs_predictor"]):
         model.train()
         train_loss = 0
         train_acc = 0
@@ -293,7 +300,7 @@ def train_predictor(model, trainloader, testloader, num_epochs=10, lr=0.0001, de
         train_acc /= len(trainloader)
         train_rst_dict['loss'].append(train_loss)
         train_rst_dict['acc'].append(train_acc)
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}, Acc: {train_acc:.4f}')
+        print(f'Epoch [{epoch+1}/{config["num_epochs_predictor"]}], Loss: {train_loss:.4f}, Acc: {train_acc:.4f}')
         
         # test
         test_rst_dict, y_true, y_pred = test_predictor(model, testloader, device)
@@ -343,7 +350,9 @@ def test_predictor(model, testloader, device):
     
     return test_rst_dict, y_true, y_pred
 
-def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
+def train_test_predictor(task='grouped-grouped', experiment_name="example", device='cpu', csf3=True):
+    stgcn_configs = load_configs(experiment_name, model="stgcn", csf3=csf3)
+
     if task=="grouped-grouped":
         vae_stgcn_train_rst_dicts = {}
         predictor_train_rst_dicts = {}
@@ -353,16 +362,16 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         
         for ptcp_id in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
             print(f"grouped-grouped experiment with {ptcp_id}")
-            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=50, csf3=csf3)
-            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=50, train=False, csf3=csf3)
+            grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=stgcn_configs["batch_size"], csf3=csf3)
+            grouped_testloader = data_setup.get_grouped_dataloader(ptcp_id=ptcp_id, batch_size=stgcn_configs["batch_size"], train=False, csf3=csf3)
 
-            vae_stgcn = models.get_vae_stgcn(device=device)
+            vae_stgcn = models.get_vae_stgcn(args=stgcn_configs, device=device)
 
-            vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=grouped_trainloader, device=device)
+            vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=grouped_trainloader, config=stgcn_configs, device=device)
             
-            predictor = models.get_predictor(vae_stgcn=vae_stgcn, device=device)
+            predictor = models.get_predictor(vae_stgcn=vae_stgcn, args=stgcn_configs, device=device)
             
-            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_trainloader, testloader=grouped_testloader, device=device)
+            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_trainloader, testloader=grouped_testloader, config=stgcn_configs, device=device)
 
             vae_stgcn_train_rst_dicts[ptcp_id] = vae_stgcn_train_rst_dict
             predictor_train_rst_dicts[ptcp_id] = predictor_train_rst_dict
@@ -379,16 +388,16 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         
         for ptcp_id in ['s1', 's2', 's3']:
             print(f"paired-paired experiment with {ptcp_id}")
-            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=50, csf3=csf3)
-            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=50, train=False, csf3=csf3)
+            paired_trainloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=stgcn_configs["batch_size"], csf3=csf3)
+            paired_testloader = data_setup.get_paired_dataloader(ptcp_id=ptcp_id, batch_size=stgcn_configs["batch_size"], train=False, csf3=csf3)
 
-            vae_stgcn = models.get_vae_stgcn(device=device)
+            vae_stgcn = models.get_vae_stgcn(args=stgcn_configs, device=device)
 
-            vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=paired_trainloader, device=device)
+            vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=paired_trainloader, config=stgcn_configs, device=device)
             
-            predictor = models.get_predictor(vae_stgcn=vae_stgcn, device=device)
+            predictor = models.get_predictor(vae_stgcn=vae_stgcn, args=stgcn_configs, device=device)
             
-            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=paired_trainloader, testloader=paired_testloader, device=device)
+            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=paired_trainloader, testloader=paired_testloader, config=stgcn_configs, device=device)
             
             vae_stgcn_train_rst_dicts[ptcp_id] = vae_stgcn_train_rst_dict
             predictor_train_rst_dicts[ptcp_id] = predictor_train_rst_dict
@@ -405,16 +414,16 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         y_true_dicts = {}
         y_pred_dicts = {}
         
-        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all', batch_size=50, csf3=csf3)
-        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', batch_size=50, csf3=csf3)
+        grouped_trainloader = data_setup.get_grouped_dataloader(ptcp_id='all', batch_size=stgcn_configs["batch_size"], csf3=csf3)
+        paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', batch_size=stgcn_configs["batch_size"], csf3=csf3)
         
-        vae_stgcn = models.get_vae_stgcn(device=device)
+        vae_stgcn = models.get_vae_stgcn(args=stgcn_configs, device=device)
 
-        vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=grouped_trainloader, device=device)
+        vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=grouped_trainloader, config=stgcn_configs, device=device)
         
-        predictor = models.get_predictor(vae_stgcn=vae_stgcn, device=device)
+        predictor = models.get_predictor(vae_stgcn=vae_stgcn, args=stgcn_configs, device=device)
         
-        predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_trainloader, testloader=paired_testloader, device=device)
+        predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_trainloader, testloader=paired_testloader, config=stgcn_configs, device=device)
         
         vae_stgcn_train_rst_dicts['all'] = vae_stgcn_train_rst_dict
         predictor_train_rst_dicts['all'] = predictor_train_rst_dict
@@ -431,16 +440,16 @@ def train_test_predictor(task='grouped-grouped', device='cpu', csf3=True):
         
         for ptcp_id in ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10', 's11']:
             print(f"grouped_by_ptcp-paired experiment with {ptcp_id}")
-            grouped_by_ptcp_trainloader = data_setup.get_grouped_by_ptcp_dataloader(ptcp_id=ptcp_id, batch_size=50, csf3=csf3)
-            paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', batch_size=50, csf3=csf3)
+            grouped_by_ptcp_trainloader = data_setup.get_grouped_by_ptcp_dataloader(ptcp_id=ptcp_id, batch_size=stgcn_configs["batch_size"], csf3=csf3)
+            paired_testloader = data_setup.get_paired_dataloader(ptcp_id='all', batch_size=stgcn_configs["batch_size"], csf3=csf3)
 
-            vae_stgcn = models.get_vae_stgcn(device=device)
+            vae_stgcn = models.get_vae_stgcn(args=stgcn_configs, device=device)
 
-            vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=grouped_by_ptcp_trainloader, device=device)
+            vae_stgcn_train_rst_dict = train_vae_stgcn(model=vae_stgcn, trainloader=grouped_by_ptcp_trainloader, config=stgcn_configs, device=device)
             
-            predictor = models.get_predictor(vae_stgcn=vae_stgcn, device=device)
+            predictor = models.get_predictor(vae_stgcn=vae_stgcn, args=stgcn_configs, device=device)
             
-            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_by_ptcp_trainloader, testloader=paired_testloader, device=device)
+            predictor_train_rst_dict, test_rst_dict, y_true, y_pred = train_predictor(model=predictor, trainloader=grouped_by_ptcp_trainloader, testloader=paired_testloader, config=stgcn_configs, device=device)
             
             vae_stgcn_train_rst_dicts[ptcp_id] = vae_stgcn_train_rst_dict
             predictor_train_rst_dicts[ptcp_id] = predictor_train_rst_dict
