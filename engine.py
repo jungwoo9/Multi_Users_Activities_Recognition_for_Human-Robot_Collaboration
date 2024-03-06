@@ -45,7 +45,8 @@ class EarlyStopping:
 
 def train_lstm(model, trainloader, testloader, config, device='cpu'):
     # Loss and optimizer
-    criterion = nn.CrossEntropyLoss()
+    cross_entropy_weights = torch.tensor(config["cross_entropy_weights"]).to(torch.float32).to(device)
+    criterion = nn.CrossEntropyLoss(cross_entropy_weights)
     if config["optimizer"]=="Adam":
         optimizer = optim.Adam(model.parameters(), lr=config["lr"])
     else:
@@ -53,7 +54,7 @@ def train_lstm(model, trainloader, testloader, config, device='cpu'):
     
     train_rst_dict = {'loss':[], 'acc':[]}
     
-    early_stopper = EarlyStopping(patience=2, min_delta=0.02)
+    early_stopper = EarlyStopping(patience=config["patience"], min_delta=config["min_delta"])
     
     for epoch in range(config["num_epochs"]):
         # train
@@ -261,7 +262,8 @@ def train_vae_stgcn(model, trainloader, config, device='cpu'):
     
 def train_predictor(model, trainloader, testloader, config, device='cpu'):
     # Loss and optimizer
-    criterion = nn.CrossEntropyLoss()
+    cross_entropy_weights = torch.tensor(config["cross_entropy_weights"]).to(torch.float32).to(device)
+    criterion = nn.CrossEntropyLoss(cross_entropy_weights)
     if config["optimizer"] == "Adam":
         optimizer = optim.Adam(model.parameters(), lr=config['lr'])
     else:
@@ -269,7 +271,7 @@ def train_predictor(model, trainloader, testloader, config, device='cpu'):
     
     train_rst_dict = {'loss':[], 'acc':[]}
     
-    early_stopper = EarlyStopping(patience=2, min_delta=0.01)
+    early_stopper = EarlyStopping(patience=config["patience"], min_delta=config["min_delta"])
     
     for epoch in range(config["num_epochs_predictor"]):
         model.train()

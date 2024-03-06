@@ -1,0 +1,15 @@
+{
+    "Kt": 9,
+    "Ks": 3,
+    "num_stgcn_blocks": 4,
+    "stgcn_dropout":0 ,
+    "number_of_predictor_layers": 1,
+    "lr": 0.0001,
+    "optimizer": "Adam",
+    "batch_size": 50,
+    "num_epochs_vae": 4,
+    "num_epochs_predictor": 10,
+    "patience": 2,
+    "min_delta": 0.01,
+    "cross_entropy_weights": [1, 1, 1, 1, 1, 1, 1, 1, 1]
+}

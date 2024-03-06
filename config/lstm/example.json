@@ -1,0 +1,11 @@
+{
+    "batch_normalization": true,
+    "number_of_hidden_layers": 250,
+    "lr": 0.00001,
+    "optimizer": "Adam",
+    "batch_size": 256,
+    "num_epochs": 10,
+    "patience": 3,
+    "min_delta": 0.02,
+    "cross_entropy_weights": [1, 1, 1, 1, 1, 1, 1, 1, 1]
+}
