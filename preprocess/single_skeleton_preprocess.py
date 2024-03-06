@@ -102,8 +102,8 @@ def concatenate_two_skeleton(skeleton_dict):
         t_1 = k.split("_")[2] # ignore
         r_1 = k.split("_")[3] # repetition
 
-        if int(t_1[1:]) >= 2:
-            continue
+        # if int(t_1[1:]) >= 2:
+        #     continue
 
         # if int(ptcp_1[1:]) > 4:
         #     continue
@@ -124,8 +124,8 @@ def concatenate_two_skeleton(skeleton_dict):
                 t_2 = k_.split("_")[2]
                 r_2 = k_.split("_")[3]
 
-                if int(t_2[1:]) >= 2:
-                    continue
+                # if int(t_2[1:]) >= 2:
+                #     continue
 
                 new_name = "_".join([ptcp_1, ptcp_2, act_1, act_2, t_1, t_2, r_1, r_2, "skeleton"])
                 
@@ -153,12 +153,6 @@ def concatenate_two_skeleton_by_ptcp(skeleton_dict):
         t_1 = k.split("_")[2] # ignore
         r_1 = k.split("_")[3] # repetition
 
-        # if int(ptcp_1[1:]) == 1:
-        #     continue
-
-        if int(t_1[1:]) >= 4:
-            continue
-
         if ptcp is None:
             ptcp = ptcp_1
 
@@ -177,7 +171,7 @@ def concatenate_two_skeleton_by_ptcp(skeleton_dict):
 
                 new_name = "_".join([ptcp_1, ptcp_2, act_1, act_2, t_1, t_2, r_1, r_2, "skeleton"])
                 
-                if int(t_2[1:]) >= 4:
+                if (int(r_1[1:]) <=3 and int(r_2[1:]) <=3) or (int(r_1[1:]) > 3 and int(r_2[1:]) > 3):
                     continue
                 
                 new_skeleton = []
