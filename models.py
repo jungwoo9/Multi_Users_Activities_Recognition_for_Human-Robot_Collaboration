@@ -45,7 +45,9 @@ def get_lstm(input_size=3*20, hidden_size=250, output_size=9, batch=True, device
 
     return lstm
 
-## Second version STGCN ###############
+# define STGCN and VAE model
+# STGCN code referenced by https://github.com/open-mmlab/mmskeleton
+# VAE code referenced by https://github.com/williamFalcon/pytorch-lightning-vae
 
 class ConvTemporalGraphical(nn.Module):
 
