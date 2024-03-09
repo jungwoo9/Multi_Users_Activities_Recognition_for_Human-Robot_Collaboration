@@ -12,6 +12,48 @@ def load_dict(path_to_load):
 
     return dict_
 
+## augmentation ##
+# code referenced by github repository https://github.com/uchidalab/time_series_augmentation/tree/master
+
+def window_warp(x, window_ratio=0.1, scales=[0.5, 2.]):
+    # https://halshs.archives-ouvertes.fr/halshs-01357973/document
+    warp_scales = np.random.choice(scales, x.shape[0])
+    warp_size = np.ceil(window_ratio*x.shape[1]).astype(int)
+    window_steps = np.arange(warp_size)
+        
+    window_starts = np.random.randint(low=1, high=x.shape[1]-warp_size-1, size=(x.shape[0])).astype(int)
+    window_ends = (window_starts + warp_size).astype(int)
+            
+    ret = np.zeros_like(x)
+    for i, pat in enumerate(x):
+        for dim in range(x.shape[2]):
+            start_seg = pat[:window_starts[i],dim]
+            window_seg = np.interp(np.linspace(0, warp_size-1, num=int(warp_size*warp_scales[i])), window_steps, pat[window_starts[i]:window_ends[i],dim])
+            end_seg = pat[window_ends[i]:,dim]
+            warped = np.concatenate((start_seg, window_seg, end_seg))                
+            ret[i,:,dim] = np.interp(np.arange(x.shape[1]), np.linspace(0, x.shape[1]-1., num=warped.size), warped).T
+    return ret
+
+def shear_skeleton(skeleton_data):
+    sheared_skeleton = skeleton_data.copy()
+
+    shear_factor = np.random.randint(1, 6) / 10
+
+    H = np.array([[1, shear_factor, 0],
+                  [shear_factor, 1, 0],
+                  [0, 0, 1]])
+
+    # Apply the shearing transformation
+    for i in range(len(skeleton_data)):
+        sheared_skeleton[i] = np.dot(H, skeleton_data[i])
+
+    return sheared_skeleton
+    
+def jitter(x, sigma=0.005):
+    # https://arxiv.org/pdf/1706.00527.pdf
+    return x + np.random.normal(loc=0., scale=sigma, size=x.shape)
+
+
 ## grouped ##
 
 def map_label(label_1, label_2):
@@ -110,6 +152,19 @@ def get_grouped_by_ptcp_dataloader(ptcp_id='s01', train=True, batch_size=256, cs
     data, labels = generate_grouped_data(grouped_window_skeleton_dict, grouped_window_skeleton_dict.keys())
     
     new_data = []
+
+    # uncomment to add data augmentation
+    # for d, l in zip(data, labels):
+        # d = window_warp(d.reshape(1, 130, -1)).reshape(130, 3, 20)
+        # d = shear_skeleton(d)
+        # d = jitter(d.reshape(1, 130, -1)).reshape(130, 3, 20)
+        # d = window_warp(jitter(d.reshape(1, 130, -1))).reshape(130, 3, 20)
+        # new_data.append([d, l])
+    
+    # for d, l in zip(data, labels):
+    #     d = jitter(d.reshape(1, 130, -1)).reshape(130, 3, 20)
+    #     new_data.append([d, l])
+
     for d, l in zip(data, labels):
         new_data.append([d, l])
     
