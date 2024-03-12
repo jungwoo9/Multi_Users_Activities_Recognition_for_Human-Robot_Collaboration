@@ -459,7 +459,7 @@ def train_test_predictor(task='grouped-grouped', experiment_name="example", devi
             y_true_dicts[ptcp_id] = y_true
             y_pred_dicts[ptcp_id] = y_pred
         
-    return vae_stgcn_train_rst_dict, predictor_train_rst_dict, test_rst_dicts, y_true_dicts, y_pred_dicts
+    return vae_stgcn_train_rst_dicts, predictor_train_rst_dicts, test_rst_dicts, y_true_dicts, y_pred_dicts
 
 def save_result(dict_keys, dict_items, dict_name):
     # path_to_save = "/content/drive/MyDrive/3rd_year_project/result/output_dict/" + dict_name.split("_")[0] + "/" + dict_name + ".pkl"
@@ -474,6 +474,6 @@ def plot_cfm(y_true, y_pred):
     cfm = confusion_matrix(y_true, y_pred)
     cfmn = cfm.astype('float') / cfm.sum(axis=1)[:, np.newaxis]
 
-    cfmn = np.round(cfmn, 2)
+    cfmn = np.round(cfmn, 3)
     
     ConfusionMatrixDisplay(confusion_matrix=cfmn, display_labels=['WW', "WR", "WP", "RW", "RR", "RP", "PW", "PR", "PP"]).plot()
