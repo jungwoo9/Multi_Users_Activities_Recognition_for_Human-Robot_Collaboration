@@ -34,7 +34,7 @@ if args.model == "lstm":
 	    pickle.dump(save_dict, f)
 
 elif args.model == "stgcn":
-    vae_stgcn_train_rst_dict, predictor_train_rst_dict, test_rst_dicts, y_true_dicts, y_pred_dicts = engine.train_test_predictor(task=args.task, device=device)
+    vae_stgcn_train_rst_dict, predictor_train_rst_dict, test_rst_dicts, y_true_dicts, y_pred_dicts = engine.train_test_predictor(task=args.task, experiment_name=args.directory_name, device=device)
     
     save_dict = {
     	'vae_stgcn_train_rst_dict':vae_stgcn_train_rst_dict,

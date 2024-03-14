@@ -1,0 +1,13 @@
+# model
+model=$1
+
+# experiment
+experiment=$2
+
+qsub -e e_paired-paired_0 -o o_paired-paired_0 ../scratch/run $model paired-paired $experiment 0
+
+qsub -e e_grouped-grouped_0 -o o_grouped-grouped_0 ../scratch/run $model grouped-grouped $experiment 0
+
+#qsub -e e_grouped-paired_0 -o o_grouped-paired_0 ../scratch/run $model grouped-paired $experiment 0
+#qsub -e e_grouped-paired_1 -o o_grouped-paired_1 ../scratch/run $model grouped-paired $experiment 1
+#qsub -e e_grouped-paired_2 -o o_grouped-paired_2 ../scratch/run $model grouped-paired $experiment 2
