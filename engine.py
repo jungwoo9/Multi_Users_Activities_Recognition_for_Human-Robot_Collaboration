@@ -480,6 +480,6 @@ def plot_cfm(y_true, y_pred, title="Confusion Matrix"):
     
     # ConfusionMatrixDisplay(confusion_matrix=cfmn, display_labels=['WW', "WR", "WP", "RW", "RR", "RP", "PW", "PR", "PP"]).plot()
     disp = ConfusionMatrixDisplay(confusion_matrix=cfmn, display_labels=['WW', "WR", "WP", "RW", "RR", "RP", "PW", "PR", "PP"])
-    disp.plot(values_format='.2f', ax=None, xticks_rotation='horizontal')
+    disp.plot(ax=None, xticks_rotation='horizontal')
     plt.title(title)
     plt.show()
