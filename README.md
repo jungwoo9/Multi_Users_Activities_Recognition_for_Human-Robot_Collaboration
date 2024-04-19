@@ -11,4 +11,4 @@ This project explores the challenge of gathering data for multi-user interaction
 * [visualization/](visualization) includes code for visualizing the data and some visualization
 
 ## Data
-<img src="./visualization/gif/raw/paired/1/1_0.gif" width="600">
+<img align="left" width="100" height="100" src="./visualization/gif/raw/paired/1/1_0.gif">
