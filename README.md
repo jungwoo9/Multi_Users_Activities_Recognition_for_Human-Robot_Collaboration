@@ -4,5 +4,8 @@ This project explores the challenge of gathering data for multi-user interaction
 
 ## Overview
 
-* [data/](data) includes skeleton data for grouped and paired set
-![image](visualization/three_skeletons.gif)
+* [config/](config) includes json files saving the model hyperparameter settings
+* [csf/](csf) includes codes to control the CSF3
+* [data/](data) includes skeleton data (uploaded at )
+* [preprocess/](preprocess) includes code to preprocess data
+* [visualization/](visualization) includes code for visualizing the data and some visualization
