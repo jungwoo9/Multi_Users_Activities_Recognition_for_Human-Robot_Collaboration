@@ -9,3 +9,6 @@ This project explores the challenge of gathering data for multi-user interaction
 * [data/](data) includes skeleton data
 * [preprocess/](preprocess) includes code to preprocess data
 * [visualization/](visualization) includes code for visualizing the data and some visualization
+
+## Data
+<img src="./visualization/gif/raw/paired/1/1_0.gif" width="600">
