@@ -14,4 +14,4 @@ This project explores the challenge of gathering data for multi-user interaction
 <img align="left" width="400" height="400" src="./visualization/gif/raw/paired/1/1_0.gif">
 |First Image|Second Image|
 |:-:|:-:|
-|![First Image](./visualization/gif/raw/paired/1/1_0.gif)|![Second Image](./visualization/gif/raw/paired/1/1_0.gif)|
+|![First Image](/visualization/gif/raw/paired/1/1_0.gif)|![Second Image](/visualization/gif/raw/paired/1/1_0.gif)|
