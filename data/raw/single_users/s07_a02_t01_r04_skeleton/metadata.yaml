@@ -1,0 +1,19 @@
+rosbag2_bagfile_information:
+  version: 4
+  storage_identifier: sqlite3
+  relative_file_paths:
+    - src/acquisition_block/s07_a02_t01_r04_skeleton/s07_a02_t01_r04_skeleton_0.db3.zstd
+  duration:
+    nanoseconds: 14703246099
+  starting_time:
+    nanoseconds_since_epoch: 1639396552318953016
+  message_count: 214
+  topics_with_message_count:
+    - topic_metadata:
+        name: body_tracking_data
+        type: visualization_msgs/msg/MarkerArray
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 214
+  compression_format: zstd
+  compression_mode: FILE

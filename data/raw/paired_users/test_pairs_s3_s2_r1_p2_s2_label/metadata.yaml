@@ -1,0 +1,19 @@
+rosbag2_bagfile_information:
+  version: 4
+  storage_identifier: sqlite3
+  relative_file_paths:
+    - src/acquisition_block/test_pairs_s3_s2_r1_p2_s2_label/test_pairs_s3_s2_r1_p2_s2_label_0.db3.zstd
+  duration:
+    nanoseconds: 187198465545
+  starting_time:
+    nanoseconds_since_epoch: 1649240935383404718
+  message_count: 3583
+  topics_with_message_count:
+    - topic_metadata:
+        name: label
+        type: std_msgs/msg/Int64
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 3583
+  compression_format: zstd
+  compression_mode: FILE
