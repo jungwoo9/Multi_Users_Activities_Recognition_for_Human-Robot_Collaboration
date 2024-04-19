@@ -6,6 +6,6 @@ This project explores the challenge of gathering data for multi-user interaction
 
 * [config/](config) includes json files saving the model hyperparameter settings
 * [csf/](csf) includes codes to control the CSF3
-* [data/](data) includes skeleton data (uploaded at )
+* [data/](data) includes skeleton data
 * [preprocess/](preprocess) includes code to preprocess data
 * [visualization/](visualization) includes code for visualizing the data and some visualization
