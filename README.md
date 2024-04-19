@@ -14,4 +14,4 @@ This project explores the challenge of gathering data for multi-user interaction
 <img align="left" width="400" height="400" src="./visualization/gif/raw/paired/1/1_0.gif">
 Solarized dark             |  Solarized Ocean
 :-------------------------:|:-------------------------:
-![](./visualization/gif/raw/paired/1/1_0.gif)  |  ![](https://...Ocean.png)
+![](https://github.com/jungwoo9/Multi_Users_Activities_Recognition_for_Human-Robot_Collaboration/blob/main/visualization/gif/raw/paired/1/1_0.gif)  |  ![](https://...Ocean.png)
