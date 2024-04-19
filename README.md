@@ -11,6 +11,6 @@ This project explores the challenge of gathering data for multi-user interaction
 * [visualization/](visualization) includes code for visualizing the data and some visualization
 
 ## Data
-Solarized dark             |  Solarized Ocean
+Single Data             |  Pair Data
 :-------------------------:|:-------------------------:
-!<img align="left" width="400" height="400" src="./visualization/gif/raw/paired/1/1_0.gif">  |  !<img align="left" width="400" height="400" src="./visualization/gif/raw/paired/1/1_0.gif">
+!<img align="left" width="400" height="400" src="./visualization/gif/raw/single/working/working_0.gif">  |  !<img align="left" width="400" height="400" src="./visualization/gif/raw/paired/1/1_0.gif">
