@@ -27,9 +27,9 @@ Single Data             |  Pair Data
 From 32 joints of original skeleton, only 11 joints are selected for this research. Two normalizations are done in the data pre-processing step: **Naval-Neck Normalization** and **Min-Max Normalization**.
 Raw Data             |  Normalized Data
 :-------------------------:|:-------------------------:
-<img align="left" width="400" height="400" src="./visualization/gif/raw/paired/1/1_0.gif">  |  <img align="left" width="400" height="400" src="visualization/gif/norm/paired/1/1_0.gif">
+<img align="left" width="400" height="400" src="./visualization/gif/raw/paired/6/6_0.gif">  |  <img align="left" width="400" height="400" src="visualization/gif/norm/paired/6/6_0.gif">
 
 In case of **Single Data**, it is merged with other or same participant's data so that it generates the same form of **Pair Data**
 Single Data             |  Merged Data
 :-------------------------:|:-------------------------:
-<img align="left" width="400" height="400" src="./visualization/gif/raw/paired/1/1_0.gif">  |  <img align="left" width="400" height="400" src="visualization/gif/norm/paired/1/1_0.gif">
+<img align="left" width="400" height="400" src="visualization/gif/raw/single/preparing/preparing_0.gif">  |  <img align="left" width="400" height="400" src="visualization/gif/norm/grouped/9/9_0.gif">
